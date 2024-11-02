@@ -33,5 +33,5 @@ while rodando:
         
 # gravar(frames)
 
-# cap.release()
+cap.release()
 cv2.destroyAllWindows()

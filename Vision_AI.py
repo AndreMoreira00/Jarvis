@@ -2,34 +2,55 @@ import cv2
 import mediapipe as mp
 import time
 
-# Funções de comando
 
+
+# Inicializa o MediaPipe Hands
+mp_hands = mp.solutions.hands
+hands = mp_hands.Hands(static_image_mode=False,
+                       max_num_hands=2,
+                       min_detection_confidence=0.5,
+                       min_tracking_confidence=0.5)
+mp_drawing = mp.solutions.drawing_utils
+
+# Funções de comando:
+
+# Foto:
 def save_foto(frame):
     timesr = time.strftime("%Y%m%d_%H%M%S")
     cv2.imwrite(f"Images/{timesr}.jpg", frame)
     print(f"Foto tirada e salva como '{timesr}.jpg'")
     time.sleep(0.5)
 
-# Funções de Gestos
+# Gravar Video:
 
+# Audio:
+
+# Gravar Video com audio:
+
+# Foto e audio:
+
+# Descrever o ambinete:
+
+
+# Funções de Gestos:
+
+# OK:
 def ok(polegar_4_x, indicador_8_x, polegar_4_y, indicador_8_y, frame):
     if (polegar_4_x - indicador_8_x) < 20 and (polegar_4_y - indicador_8_y) < 20:
         return save_foto(frame)
 
-def camera(polegar_4_y, indicador_8_y, mindinho_20_x, mindinho_20_y, meio_12_x, meio_12_y):
-    if (polegar_y - indicador_y) > 90 and (mindinho_x - meio_x) < 10 and (mindinho_y - meio_y) < 2:
-        time.sleep(0.5)
-        return print("Gesto Realizado: 'Camera'")
+# []:
 
-# Inicializa MediaPipe Hands
-mp_hands = mp.solutions.hands
-hands = mp_hands.Hands(static_image_mode=False,
-                       max_num_hands=2,
-                       min_detection_confidence=0.5,
-                       min_tracking_confidence=0.5)
+# |]:
+            
+# OK|:
+            
+# \/:
+            
+# |:
 
-mp_drawing = mp.solutions.drawing_utils
 
+# Captura de vídeo
 cap = cv2.VideoCapture(0)
 
 while cap.isOpened():
@@ -37,80 +58,106 @@ while cap.isOpened():
     if not ret:
         print("Erro ao capturar o frame.")
         break
-
-    frame = cv2.flip(frame, 1)
     
+    frame = cv2.flip(frame, 1)    
     rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
     results = hands.process(rgb_frame)
-    
-    # Verifica se alguma mão foi detectada
-    if results.multi_hand_landmarks:
+
+    if results.multi_hand_landmarks and results.multi_handedness:
         for hand_landmarks, hand_handedness in zip(results.multi_hand_landmarks, results.multi_handedness):
             hand_label = hand_handedness.classification[0].label  # "Right" ou "Left"
             
-            # Desenha os pontos e conexões das mãos detectadas na imagem
-            mp_drawing.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
-            
-            # Definindo os pontos da mão baseado nos dedos
+            # Palmo:
+            # palmo = hand_landmarks.landmark[0]
             
             # Polegar:
             polegar_4 = hand_landmarks.landmark[4]
+            # polegar_3 = hand_landmarks.landmark[3]
+            # polegar_2 = hand_landmarks.landmark[2]
+            # polegar_1 = hand_landmarks.landmark[1]
             
             # Indicador:
             indicador_8 = hand_landmarks.landmark[8]
+            # indicador_7 = hand_landmarks.landmark[7]
+            # indicador_6 = hand_landmarks.landmark[6]
+            # indicador_5 = hand_landmarks.landmark[5]
             
             # Meio:
             meio_12 = hand_landmarks.landmark[12]
+            # meio_11 = hand_landmarks.landmark[11]
+            # meio_10 = hand_landmarks.landmark[10]
+            # meio_9 = hand_landmarks.landmark[9]
 
             # Anelar:
             anelar_16 = hand_landmarks.landmark[16]
+            # anelar_15 = hand_landmarks.landmark[15]
+            # anelar_14 = hand_landmarks.landmark[14]
+            # anelar_13 = hand_landmarks.landmark[13]
             
             # Mindinho:
             mindinho_20 = hand_landmarks.landmark[20]
-            
-            # Convertendo coordenadas dos pontos
+            # mindinho_19 = hand_landmarks.landmark[19]
+            # mindinho_18 = hand_landmarks.landmark[18]
+            # mindinho_17 = hand_landmarks.landmark[17]
+
+            # Converte para pixels
             h, w, _ = frame.shape
+            
+            # Palmo:
+            # palmo_x, palmo_y = int(palmo.x * w), int(palmo.y * h)
             
             # Polegar:
             polegar_4_x, polegar_4_y = int(polegar_4.x * w), int(polegar_4.y * h)
+            # polegar_3_x, polegar_3_y = int(polegar_3.x * w), int(polegar_3.y * h)
+            # polegar_2_x, polegar_2_y = int(polegar_2.x * w), int(polegar_2.y * h)
+            # polegar_1_x, polegar_1_y = int(polegar_1.x * w), int(polegar_1.y * h)
             
             # Indicador:
             indicador_8_x, indicador_8_y = int(indicador_8.x * w), int(indicador_8.y * h)
+            # indicador_7_x, indicador_7_y = int(indicador_7.x * w), int(indicador_7.y * h)
+            # indicador_6_x, indicador_6_y = int(indicador_6.x * w), int(indicador_6.y * h)
+            # indicador_5_x, indicador_5_y = int(indicador_5.x * w), int(indicador_5.y * h)
             
             # Meio:
             meio_12_x, meio_12_y = int(meio_12.x * w), int(meio_12.y * w)
+            # meio_11_x, meio_11_y = int(meio_11.x * w), int(meio_11.y * w)
+            # meio_10_x, meio_10_y = int(meio_10.x * w), int(meio_10.y * w)
+            # meio_9_x, meio_9_y = int(meio_9.x * w), int(meio_9.y * w)
             
             # Anelar:
             anelar_16_x, anelar_16_y = int(anelar_16.x * w), int(anelar_16.y * w)
+            # anelar_15_x, anelar_15_y = int(anelar_15.x * w), int(anelar_15.y * w)
+            # anelar_14_x, anelar_14_y = int(anelar_14.x * w), int(anelar_14.y * w)
+            # anelar_13_x, anelar_13_y = int(anelar_13.x * w), int(anelar_13.y * w)
             
             # Mindinho:
             mindinho_20_x, mindinho_20_y = int(mindinho_20.x * w), int(mindinho_20.y * w)
+            # mindinho_19_x, mindinho_19_y = int(mindinho_19.x * w), int(mindinho_19.y * w)
+            # mindinho_18_x, mindinho_18_y = int(mindinho_18.x * w), int(mindinho_18.y * w)
+            # mindinho_17_x, mindinho_17_y = int(mindinho_17.x * w), int(mindinho_17.y * w)
             
             # Verificação de Gestos: 
+          
+            # OK:
             if hand_label == "Left" and ok(polegar_4_x, indicador_8_x, polegar_4_y, indicador_8_y, frame):
                 print("Gesto Realizado: 'OK'")
+
+            # []:
             
-            if camera(polegar_4_y, indicador_8_y, mindinho_20_x, mindinho_20_y, meio_12_x, meio_12_y):
-                print("Gesto Realizado: 'CAMERA'")
-                
-            # Acessa as coordenadas dos pontos da mão (21 pontos por mão)
-            for i, landmark in enumerate(hand_landmarks.landmark):
-                # Converte as coordenadas para valores em pixels
-                h, w, _ = frame.shape
-                cx, cy = int(landmark.x * w), int(landmark.y * h)
-
-                # Exibe as coordenadas do ponto-chave na imagem
-                cv2.putText(frame, f'{i}', (cx, cy), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (255, 0, 0), 1, cv2.LINE_AA)
+            # |]:
             
+            # OK|:
+            
+            # \/:
+            
+            # |:
+            
+            # Desenha todos os pontos da mão
+            mp_drawing.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
 
-    # Exibe o frame com as mãos detectadas
-    cv2.imshow("MediaPipe Hands", frame)
-
-    # Pressione 'q' para sair
+    cv2.imshow("MediaPipe Hands - Gestos Especificos", frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
-# Libera os recursos
 cap.release()
 cv2.destroyAllWindows()
