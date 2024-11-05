@@ -34,7 +34,7 @@ prompt = PromptTemplate.from_template(template=template)
 chat = ChatGroq(api_key=key , model='llama-3.1-8b-instant')
 chain = prompt | chat
 
-# Tradução
+# # Tradução
 
 def Translate():
   text = ouvirMic()
@@ -47,7 +47,7 @@ translate = Translate()
 
 import edge_tts
 
-VOICES = ['en-AU-WilliamNeural']
+VOICES = ['pt-BR-AntonioNeural']
 VOICE = VOICES[0]
 OUTPUT_FILE = 'text_speech.mp3'
 

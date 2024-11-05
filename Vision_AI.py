@@ -2,8 +2,6 @@ import cv2
 import mediapipe as mp
 import time
 
-
-
 # Inicializa o MediaPipe Hands
 mp_hands = mp.solutions.hands
 hands = mp_hands.Hands(static_image_mode=False,
@@ -53,8 +51,6 @@ def ok(h, w, hand_landmarks, frame):
     
     indicador_6 = hand_landmarks.landmark[6]
     indicador_6_x, indicador_6_y = int(indicador_6.x * w), int(indicador_6.y * h)
-    
-    
     
     if (polegar_4_x - indicador_8_x) < 7 and (polegar_4_y - indicador_8_y) < 14 and (indicador_5_y - indicador_6_y) > 14 and (polegar_1_y - indicador_6_y) > 20 and (polegar_3_x - indicador_5_x) > 10:
         return save_foto(frame)

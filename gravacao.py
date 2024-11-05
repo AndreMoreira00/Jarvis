@@ -4,8 +4,6 @@ import numpy as np
 # def gravar(frames):
     # cv2.imwrite(f"Images/Video_Brabo.mp4", frames)
 
-
-
 # frames = []
 
 
