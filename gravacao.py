@@ -1,35 +1,29 @@
 import cv2
 import numpy as np
+import time
 
-# def gravar(frames):
-    # cv2.imwrite(f"Images/Video_Brabo.mp4", frames)
+def save_video():
+    cap = cv2.VideoCapture(0)
 
-# frames = []
-
-
-camera = cv2.VideoCapture(0)
-rodando = True
-# cont = 0
-fourcc = cv2.VideoWriter_fourcc(*'XVID')
-out = cv2.VideoWriter('output.avi', fourcc, 60.0, (640,480))
-
-while rodando:
-
-    status, frame = camera.read()
+    fourcc = cv2.VideoWriter_fourcc(*'XVID')
+    timesr = time.strftime("%Y%m%d_%H%M%S")
     
-    cv2.imshow("Camera", frame)
+    duration_in_seconds = 15
+    fps = 30
     
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
+    out = cv2.VideoWriter(f'Video/{timesr}.avi', fourcc, fps, (640, 480))
+    
+    total_frames = duration_in_seconds * fps
 
-    # cont+=1
-    
-    # frames.append(frame)
-    
-    # if cont == 120:
-    #     rodando = False
+    frame_count = 0
+    while frame_count < total_frames:
         
-# gravar(frames)
-
-cap.release()
-cv2.destroyAllWindows()
+        status, frame = cap.read()
+        out.write(frame)
+        frame_count+=1
+        
+    cap.release()
+    out.release()
+    cv2.destroyAllWindows()
+    
+save_video()

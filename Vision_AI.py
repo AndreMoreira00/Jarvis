@@ -19,7 +19,24 @@ def save_foto(frame):
     time.sleep(0.5)
 
 # Gravar Video:
+def save_video():
+    fourcc = cv2.VideoWriter_fourcc(*'XVID')
+    timesr = time.strftime("%Y%m%d_%H%M%S")
+    
+    duration_in_seconds = 15
+    fps = 30
+    
+    out = cv2.VideoWriter(f'Video/{timesr}.avi', fourcc, fps, (640, 480))
+    
+    total_frames = duration_in_seconds * fps
 
+    frame_count = 0
+    while frame_count < total_frames:
+        
+        status, frame = cap.read()
+        out.write(frame)
+        frame_count+=1
+        
 # Audio:
 
 # Gravar Video com audio:
@@ -56,6 +73,36 @@ def ok(h, w, hand_landmarks, frame):
         return save_foto(frame)
 
 # []:
+def cam(h, w, hand_landmarks, frame):
+    
+    polegar_4 = hand_landmarks.landmark[4]
+    polegar_4_x, polegar_4_y = int(polegar_4.x * w), int(polegar_4.y * h)
+    
+    polegar_3 = hand_landmarks.landmark[3]
+    polegar_3_x, polegar_3_y = int(polegar_3.x * w), int(polegar_3.y * h)
+
+    polegar_2 = hand_landmarks.landmark[2]
+    polegar_2_x, polegar_2_y = int(polegar_2.x * w), int(polegar_2.y * h)
+    
+    indicador_8 = hand_landmarks.landmark[8]
+    indicador_8_x, indicador_8_y = int(indicador_8.x * w), int(indicador_8.y * h)
+    
+    indicador_7 = hand_landmarks.landmark[7]
+    indicador_7_x, indicador_7_y = int(indicador_7.x * w), int(indicador_7.y * h)
+            
+    indicador_6 = hand_landmarks.landmark[6]
+    indicador_6_x, indicador_6_y = int(indicador_6.x * w), int(indicador_6.y * h)
+    
+    meio_12 = hand_landmarks.landmark[12]
+    meio_12_x, meio_12_y = int(meio_12.x * w), int(meio_12.y * h)
+    
+    mindinho_20 = hand_landmarks.landmark[20]
+    mindinho_20_x, mindinho_20_y = int(mindinho_20.x * w), int(mindinho_20.y * h)
+    
+    if (polegar_4_x - indicador_8_x) < 5 and (polegar_4_y - indicador_8_y) > 75 and (mindinho_20_x - meio_12_x) < 15 and (mindinho_20_y - meio_12_y) < 10:
+        time.sleep(0.5)
+        return save_video()
+        # return print("Gesto Realizado: 'Camera'")
 
 # |]:
             
@@ -100,7 +147,7 @@ while cap.isOpened():
             
             # polegar_3 = hand_landmarks.landmark[3]
             # polegar_3_x, polegar_3_y = int(polegar_3.x * w), int(polegar_3.y * h)
-    
+
             # polegar_2 = hand_landmarks.landmark[2]
             # polegar_2_x, polegar_2_y = int(polegar_2.x * w), int(polegar_2.y * h)
             
@@ -164,6 +211,9 @@ while cap.isOpened():
             # OK:
             if hand_label == "Left" and ok(h, w, hand_landmarks, frame):
                 print("Gesto Realizado: 'OK'")
+            
+            if cam(h, w, hand_landmarks, frame):
+                print("Gesto Realizado: 'Camera'")
 
             # []:
             
