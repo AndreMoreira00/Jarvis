@@ -1,6 +1,7 @@
 import cv2
 import mediapipe as mp
 import time
+import speech_recognition as sr
 
 # Inicializa o MediaPipe Hands
 mp_hands = mp.solutions.hands
@@ -38,7 +39,23 @@ def save_video():
         frame_count+=1
         
 # Audio:
-
+def Translate():
+  def ouvirMic():
+    # habilitar mic
+    microfone = sr.Recognizer()
+    print("Diga alguma coisa: ")
+    with sr.Microphone() as source:
+      # armazena o audio em texto
+      audio = microfone.listen(source)
+    try:
+      frase = microfone.recognize_google(audio, language="pt-BR")
+      return frase
+    except sr.UnknownValueError:
+      print("Não entendi")
+    return False
+  text = ouvirMic()
+  print(text)
+  
 # Gravar Video com audio:
 
 # Foto e audio:
@@ -93,13 +110,16 @@ def cam(h, w, hand_landmarks, frame):
     indicador_6 = hand_landmarks.landmark[6]
     indicador_6_x, indicador_6_y = int(indicador_6.x * w), int(indicador_6.y * h)
     
+    indicador_5 = hand_landmarks.landmark[5]
+    indicador_5_x, indicador_5_y = int(indicador_5.x * w), int(indicador_5.y * h)
+    
     meio_12 = hand_landmarks.landmark[12]
     meio_12_x, meio_12_y = int(meio_12.x * w), int(meio_12.y * h)
     
     mindinho_20 = hand_landmarks.landmark[20]
     mindinho_20_x, mindinho_20_y = int(mindinho_20.x * w), int(mindinho_20.y * h)
     
-    if (polegar_4_x - indicador_8_x) < 5 and (polegar_4_y - indicador_8_y) > 75 and (mindinho_20_x - meio_12_x) < 15 and (mindinho_20_y - meio_12_y) < 10:
+    if (polegar_4_x - indicador_8_x) < 5 and (polegar_4_y - indicador_8_y) > 75 and (mindinho_20_x - meio_12_x) < 15 and (mindinho_20_y - meio_12_y) < 10 and (indicador_5_x - indicador_6_x) < 4:
         time.sleep(0.5)
         return save_video()
         # return print("Gesto Realizado: 'Camera'")
@@ -111,7 +131,26 @@ def cam(h, w, hand_landmarks, frame):
 # \/:
             
 # |:
-
+def audio(h, w, hand_landmarks, frame):
+    
+    polegar_4 = hand_landmarks.landmark[4]
+    polegar_4_x, polegar_4_y = int(polegar_4.x * w), int(polegar_4.y * h)
+    
+    indicador_8 = hand_landmarks.landmark[8]
+    indicador_8_x, indicador_8_y = int(indicador_8.x * w), int(indicador_8.y * h)
+     
+    meio_12 = hand_landmarks.landmark[12]
+    meio_12_x, meio_12_y = int(meio_12.x * w), int(meio_12.y * h)
+    
+    anelar_16 = hand_landmarks.landmark[16]
+    anelar_16_x, anelar_16_y = int(anelar_16.x * w), int(anelar_16.y * h)
+    
+    mindinho_20 = hand_landmarks.landmark[20]
+    mindinho_20_x, mindinho_20_y = int(mindinho_20.x * w), int(mindinho_20.y * h)
+    
+    if (mindinho_20_y - anelar_16_y) < 10 and (polegar_4_y - indicador_8_y) > 85 and (anelar_16_y - meio_12_y) < 10 and (meio_12_y - indicador_8_y) > 75 and (meio_12_y - polegar_4_y) < 10:
+        Translate()
+        time.sleep(0.5)
 
 # Captura de vídeo
 cap = cv2.VideoCapture(0)
@@ -211,12 +250,11 @@ while cap.isOpened():
             # OK:
             if hand_label == "Left" and ok(h, w, hand_landmarks, frame):
                 print("Gesto Realizado: 'OK'")
-            
-            if cam(h, w, hand_landmarks, frame):
-                print("Gesto Realizado: 'Camera'")
 
             # []:
-            
+            if cam(h, w, hand_landmarks, frame):
+                print("Gesto Realizado: 'Camera'")
+                
             # |]:
             
             # OK|:
@@ -224,6 +262,8 @@ while cap.isOpened():
             # \/:
             
             # |:
+            if hand_label == "Left" and audio(h, w, hand_landmarks, frame):
+                print("Gesto Realizado: 'Audio'")
             
             # Desenha todos os pontos da mão
             mp_drawing.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
