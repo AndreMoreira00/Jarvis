@@ -17,7 +17,6 @@ def save_video():
 
     frame_count = 0
     while frame_count < total_frames:
-        
         status, frame = cap.read()
         out.write(frame)
         frame_count+=1
