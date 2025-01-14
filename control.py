@@ -7,18 +7,16 @@ from concurrent.futures import ThreadPoolExecutor
 
 import jarvis
 
-jarvis_system = jarvis.Jarvis()
-
 class Control:
   def __init__(self):
-    pass
+    self.jarvis_system = jarvis.Jarvis()
   
   # Capture Photo
   def Capture_Photo(self, frame):
     timesr = time.strftime("%Y%m%d_%H%M%S")
-    cv2.imwrite(f"./{timesr}.jpg", frame)
+    cv2.imwrite(f"image/{timesr}.jpg", frame)
     time.sleep(0.5)
-    return f"./{timesr}.jpg"
+    return f"image/{timesr}.jpg"
   
   # Capture Video
   def Capture_Video(self, cap):
@@ -26,14 +24,14 @@ class Control:
     timesr = time.strftime("%Y%m%d_%H%M%S")
     duration_in_seconds = 15
     fps = 30
-    out = cv2.VideoWriter(f'./{timesr}.avi', fourcc, fps, (640, 480))
+    out = cv2.VideoWriter(f'video/{timesr}.avi', fourcc, fps, (640, 480))
     total_frames = duration_in_seconds * fps
     frame_count = 0
     while frame_count < total_frames:
         status, frame = cap.read()
         out.write(frame)
         frame_count+=1
-    return f'./{timesr}.avi'
+    return f'video/{timesr}.avi'
   
   # Capture Audio
   def Capture_Audio(self):
@@ -54,14 +52,14 @@ class Control:
         frames.append(bloco)
     except KeyboardInterrupt:
         pass
-    arquivo_final = wave.open("./gravacao.wav", "wb")
+    arquivo_final = wave.open("audio/gravacao.wav", "wb")
     arquivo_final.setnchannels(1)
     arquivo_final.setframerate(44000)
     arquivo_final.setsampwidth(audio.get_sample_size(pyaudio.paInt16))
     arquivo_final.writeframes(b"".join(frames))
     arquivo_final.close()
     r = sr.Recognizer()
-    with sr.WavFile("./gravacao.wav") as source:              
+    with sr.WavFile("audio/gravacao.wav") as source:              
       audio = r.record(source)                        
     try:
         return (""+r.recognize_google(audio, language="pt-BR"))
@@ -70,6 +68,11 @@ class Control:
 
   # Functions control
   
+  ## Audio to Audio
+  async def Audio_to_Audio(self) -> None:
+    prompt = self.Capture_Audio()
+    await self.jarvis_system.Text_To_Text(prompt)
+  
   ## Image Audio
   async def Image_Audio(self, frame) -> None:
     with ThreadPoolExecutor() as executor:
@@ -77,7 +80,7 @@ class Control:
       future_audio = executor.submit(self.Capture_Audio)
       image_path = future_foto.result()
       prompt = future_audio.result()                       
-    await jarvis_system.Image_To_Text(image_path,prompt)
+    await self.jarvis_system.Image_To_Text(image_path,prompt)
     
   ## Video Audio
   async def Video_Audio(self, cap) -> None: 
@@ -87,4 +90,4 @@ class Control:
       video_path = future_video.result()
       prompt = future_audio.result()
     
-      await jarvis_system.Video_To_Text(video_path, prompt)
+      await self.jarvis_system.Video_To_Text(video_path, prompt)

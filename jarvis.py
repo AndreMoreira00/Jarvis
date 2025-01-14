@@ -26,9 +26,9 @@ class Jarvis:
       # Config Voice
       VOICES = ["pt-BR-AntonioNeural"]
       self.VOICE = VOICES[0]
-      self.OUTPUT_FILE = "./translate.mp3"
+      self.OUTPUT_FILE = "response/translate.mp3"
       # Config Paths
-      self.PATH_FILE = "C:/Users/andre/OneDrive/Documentos/Jarvis/New organized template/translate.mp3"
+      self.PATH_FILE = 'C:/Users/andre/OneDrive/Documentos/Jarvis/response/translate.mp3'
     
     # Delete Cahche Video
     def Delete_Cahche_Files(self):
