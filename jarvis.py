@@ -9,6 +9,7 @@ import edge_tts
 from playsound import playsound
 import time
 
+
 class Jarvis:
     def __init__(self):
       # Load Key
@@ -21,7 +22,7 @@ class Jarvis:
       # Config model Genai
       genai.configure(api_key=self.API_KEY)
       self.model = genai.GenerativeModel(
-          "gemini-1.5-flash", system_instruction=self.template
+          "gemini-2.0-flash", system_instruction=self.template
       )
       # Config Voice
       VOICES = ["pt-BR-AntonioNeural"]

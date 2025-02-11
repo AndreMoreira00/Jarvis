@@ -1,5 +1,5 @@
 import time
-import cv2
+import cv2 
 import pyaudio
 import wave
 import speech_recognition as sr
@@ -9,17 +9,21 @@ import jarvis
 
 class Control:
   def __init__(self):
+    self.ACTION = False
     self.jarvis_system = jarvis.Jarvis()
   
   # Capture Photo
   def Capture_Photo(self, frame):
+    self.ACTION = True
     timesr = time.strftime("%Y%m%d_%H%M%S")
     cv2.imwrite(f"image/{timesr}.jpg", frame)
-    time.sleep(0.5)
+    # time.sleep(0.5)
+    self.ACTION = False
     return f"image/{timesr}.jpg"
   
   # Capture Video
   def Capture_Video(self, cap):
+    self.ACTION = True
     fourcc = cv2.VideoWriter_fourcc(*'XVID')
     timesr = time.strftime("%Y%m%d_%H%M%S")
     duration_in_seconds = 15
@@ -31,10 +35,12 @@ class Control:
         status, frame = cap.read()
         out.write(frame)
         frame_count+=1
+    self.ACTION = False
     return f'video/{timesr}.avi'
   
   # Capture Audio
   def Capture_Audio(self):
+    self.ACTION = True
     audio = pyaudio.PyAudio()
     stream = audio.open(
       input = True,
@@ -62,19 +68,23 @@ class Control:
     with sr.WavFile("audio/gravacao.wav") as source:              
       audio = r.record(source)                        
     try:
-        return (""+r.recognize_google(audio, language="pt-BR"))
+      self.ACTION = False
+      return (""+r.recognize_google(audio, language="pt-BR"))
     except LookupError:         
-        return("Sem perguntas!")
+      self.ACTION = False
+      return("Sem perguntas!")
 
-  # Functions control
+  # Functions control Jarvis
   
   ## Audio to Audio
   async def Audio_to_Audio(self) -> None:
+    self.ACTION = True
     prompt = self.Capture_Audio()
     await self.jarvis_system.Text_To_Text(prompt)
   
   ## Image Audio
   async def Image_Audio(self, frame) -> None:
+    self.ACTION = True
     with ThreadPoolExecutor() as executor:
       future_foto = executor.submit(self.Capture_Photo, frame)
       future_audio = executor.submit(self.Capture_Audio)
@@ -83,7 +93,8 @@ class Control:
     await self.jarvis_system.Image_To_Text(image_path,prompt)
     
   ## Video Audio
-  async def Video_Audio(self, cap) -> None: 
+  async def Video_Audio(self, cap) -> None:
+    self.ACTION = True
     with ThreadPoolExecutor() as executor:
       future_video = executor.submit(self.Capture_Video, cap)
       future_audio = executor.submit(self.Capture_Audio)
