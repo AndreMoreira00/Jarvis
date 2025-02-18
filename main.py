@@ -45,16 +45,15 @@ async def main():
                   
                 if hand_label == "Right" and hands_system.Map_Speak(h, w, hand_landmarks, frame) and control_functions.ACTION == False:
                   await control_functions.Audio_to_Audio()
-                  # time.sleep(0.5)
+                  time.sleep(0.5)
                   
                 if hand_label == "Left" and hands_system.Map_Squid(h, w, hand_landmarks, frame):
-                  with ThreadPoolExecutor() as executor:
-                    executor.submit(control_functions.Image_Audio(frame))
-                    time.sleep(0.5)
-                  
+                  await control_functions.Image_Audio(frame)
+                  time.sleep(0.5)
+                    
                 if hand_label == "Right" and hands_system.Map_Rock(h, w, hand_landmarks, frame):
                   await control_functions.Video_Audio(cap)
-                  time.sleep(0.5)           
+                  time.sleep(0.5) 
                       
                 hands_system.mp_drawing.draw_landmarks(frame, hand_landmarks, hands_system.mp_hands.HAND_CONNECTIONS)
             

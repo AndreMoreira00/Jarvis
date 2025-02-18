@@ -78,13 +78,11 @@ class Control:
   
   ## Audio to Audio
   async def Audio_to_Audio(self) -> None:
-    self.ACTION = True
     prompt = self.Capture_Audio()
     await self.jarvis_system.Text_To_Text(prompt)
   
   ## Image Audio
   async def Image_Audio(self, frame) -> None:
-    self.ACTION = True
     with ThreadPoolExecutor() as executor:
       future_foto = executor.submit(self.Capture_Photo, frame)
       future_audio = executor.submit(self.Capture_Audio)
@@ -94,11 +92,9 @@ class Control:
     
   ## Video Audio
   async def Video_Audio(self, cap) -> None:
-    self.ACTION = True
     with ThreadPoolExecutor() as executor:
       future_video = executor.submit(self.Capture_Video, cap)
       future_audio = executor.submit(self.Capture_Audio)
       video_path = future_video.result()
       prompt = future_audio.result()
-    
       await self.jarvis_system.Video_To_Text(video_path, prompt)
