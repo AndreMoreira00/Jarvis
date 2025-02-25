@@ -1,0 +1,13 @@
+numpy
+opencv-python
+nest-asyncio
+pyaudio
+SpeechRecognition
+threadpoolctl
+python-dotenv
+google-generativeai
+google
+pathlib
+edge-tts
+playsound
+mpmath
