@@ -17,7 +17,6 @@ class Control:
     self.ACTION = True
     timesr = time.strftime("%Y%m%d_%H%M%S")
     cv2.imwrite(f"image/{timesr}.jpg", frame)
-    # time.sleep(0.5)
     self.ACTION = False
     return f"image/{timesr}.jpg"
   

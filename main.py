@@ -15,6 +15,7 @@ async def main():
   hands_system = hands.Hands()
   with ThreadPoolExecutor() as executor:
     
+    # Preferencia de camera
     cap = cv2.VideoCapture(1)
 
     while cap.isOpened():

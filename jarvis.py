@@ -6,7 +6,7 @@ import google
 import pathlib
 import speech_recognition as sr
 import edge_tts
-from playsound import playsound
+from pygame import mixer
 import time
 
 
@@ -39,7 +39,8 @@ class Jarvis:
       self.VOICE = VOICES[0]
       self.OUTPUT_FILE = "response/translate.mp3"
       # Config Paths
-      self.PATH_FILE = 'C:/Users/andre/OneDrive/Documentos/Jarvis/response/translate.mp3'
+      self.PATH_FILE = "./response/translate.mp3"
+      mixer.init()
     
     # Delete Cahche Video
     def Delete_Cahche_Files(self):
@@ -56,13 +57,25 @@ class Jarvis:
     async def Text_To_Text(self, prompt) -> None:
       response = self.model.generate_content(prompt)
       await self.Translate(response.text)
-      playsound(self.PATH_FILE)
+      SOUND = mixer.Sound(self.PATH_FILE)
+      SOUND.play()
+      t = 0
+      while t <= SOUND.get_length():
+        time.sleep(1)
+        t+=1
+      SOUND.stop()
       
     # Response Image to Text
     async def Image_To_Text(self, image_path, prompt) -> None:
       response = self.model.generate_content([{'mime_type':'image/jpeg', 'data': pathlib.Path(f'{image_path}').read_bytes()}, prompt])
       await self.Translate(response.text)
-      playsound(self.PATH_FILE)
+      SOUND = mixer.Sound(self.PATH_FILE)
+      SOUND.play()
+      t = 0
+      while t <= SOUND.get_length():
+        time.sleep(1)
+        t+=1
+      SOUND.stop()
     
     # Response Video to text 
     async def Video_To_Text(self, video_path, prompt) -> None:
@@ -76,5 +89,11 @@ class Jarvis:
       response = self.model.generate_content([video_file, prompt],
                                         request_options={"timeout": 600})
       await self.Translate(response.text)
-      playsound(self.PATH_FILE)
+      SOUND = mixer.Sound(self.PATH_FILE)
+      SOUND.play()
+      t = 0
+      while t <= SOUND.get_length():
+        time.sleep(1)
+        t+=1
+      SOUND.stop()
       self.Delete_Cahche_Files()
