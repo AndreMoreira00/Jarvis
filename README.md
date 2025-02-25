@@ -1,4 +1,4 @@
-# 🦾 Jarvis-IF-Ciência - AI-Integrated Smart Glasses
+# 🦾 Jarvis - AI-Integrated Smart Glasses
 
 ![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![MediaPipe](https://img.shields.io/badge/MediaPipe-00A3E0?style=for-the-badge&logo=google&logoColor=white)
