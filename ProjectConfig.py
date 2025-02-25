@@ -8,3 +8,4 @@ def Config_Project():
   open('.env', 'a')
   
 # pip install -r requirements.txt
+Config_Project()

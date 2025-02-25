@@ -1,7 +1,7 @@
 import jarvis
 import hands
 import control
-from ProjectConfig import Config_Project
+# from ProjectConfig import Config_Project
 
 import cv2
 import time
@@ -46,6 +46,7 @@ async def main():
                   # time.sleep(0.5)
                   
                 if hand_label == "Right" and hands_system.Map_Speak(h, w, hand_landmarks, frame) and control_functions.ACTION == False:
+                  print('speak')
                   await control_functions.Audio_to_Audio()
                   time.sleep(0.5)
                   
@@ -68,8 +69,8 @@ async def main():
     cv2.destroyAllWindows()
 
 if __name__ == "__main__":
-  try:
-    Config_Project()
-    asyncio.run(main())
-  except:
-    asyncio.run(main())
+  # try:
+  #   Config_Project()
+  #   asyncio.run(main())
+  # except:
+  asyncio.run(main())

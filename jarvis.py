@@ -1,12 +1,13 @@
 import os
 import asyncio
-from dotenv import load_dotenv, find_dotenv
+from dotenv import load_dotenv
 import google.generativeai as genai
 import google
 import pathlib
 import speech_recognition as sr
 import edge_tts
-from playsound import playsound
+#from playsound import playsound
+from pygame import mixer
 import time
 
 class Jarvis:
@@ -37,8 +38,10 @@ class Jarvis:
       self.VOICE = VOICES[0]
       self.OUTPUT_FILE = "response/translate.mp3"
       # Config Path
-      abs = os.path.abspath('./').replace('\\', '/')
-      self.PATH_FILE = f"{abs}/translate.mp3"
+      #abs = os.path.abspath('./').replace('\\', '/')
+      self.PATH_FILE = "./response/translate.mp3"
+      mixer.init()
+      self.SOUND = mixer.Sound(self.PATH_FILE)
     
     # Delete Cahche Video
     def Delete_Cahche_Files(self):
@@ -55,7 +58,12 @@ class Jarvis:
     async def Text_To_Text(self, prompt) -> None:
       response = self.model.generate_content(prompt)
       await self.Translate(response.text)
-      playsound(self.PATH_FILE)
+      self.SOUND.play()
+      t = 0
+      while t <= self.SOUND.get_length():
+        time.sleep(1)
+        t+=1
+      self.SOUND.stop()
       
     # Response Image to Text
     async def Image_To_Text(self, image_path, prompt) -> None:
