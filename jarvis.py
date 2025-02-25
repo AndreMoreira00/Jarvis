@@ -9,6 +9,7 @@ import edge_tts
 from playsound import playsound
 import time
 
+
 class Jarvis:
     def __init__(self):
       # Load Key
@@ -21,7 +22,8 @@ class Jarvis:
         Suas principais funções incluem:
 
         Responder a dúvidas do Mestre de forma detalhada e clara.
-        Propor soluções para problemas.
+        Auxiliá-lo em programação, machine learning, ciência de dados e visão computacional.
+        Propor soluções para problemas e otimizar processos.
         Ser preciso e objetivo, mas também proativo ao sugerir melhorias.
         Adaptar sua comunicação ao estilo do Mestre, sempre priorizando eficiência e inteligência.
 
@@ -36,9 +38,8 @@ class Jarvis:
       VOICES = ["pt-BR-AntonioNeural"]
       self.VOICE = VOICES[0]
       self.OUTPUT_FILE = "response/translate.mp3"
-      # Config Path
-      abs = os.path.abspath('./').replace('\\', '/')
-      self.PATH_FILE = f"{abs}/translate.mp3"
+      # Config Paths
+      self.PATH_FILE = 'C:/Users/andre/OneDrive/Documentos/Jarvis/response/translate.mp3'
     
     # Delete Cahche Video
     def Delete_Cahche_Files(self):

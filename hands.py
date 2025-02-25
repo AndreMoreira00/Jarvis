@@ -16,7 +16,6 @@ class Hands:
   def Calculate_Distance(self, point1, point2):
     return math.sqrt((point1[0] - point2[0])**2 + (point1[1] - point2[1])**2)
   
-  # Take Photo
   def Map_Ok(self, h, w, hand_landmarks, frame):
     polegar_1 = hand_landmarks.landmark[1]
     polegar_1_x, polegar_1_y = int(polegar_1.x * w), int(polegar_1.y * h) 
@@ -53,8 +52,7 @@ class Hands:
             # return save_foto(frame)
             return True
   
-  # Record Video
-  def Map_Positive(self, h, w, hand_landmarks, frame):
+  def Map_Positive(self,h, w, hand_landmarks, frame):
     polegar_1 = hand_landmarks.landmark[1]
     polegar_1_x, polegar_1_y = int(polegar_1.x * w), int(polegar_1.y * h)
     polegar_4 = hand_landmarks.landmark[4]
@@ -83,8 +81,7 @@ class Hands:
         # return save_video()
         return True
   
-  # Ask Jarvis
-  def Map_Speak(self, h, w, hand_landmarks, frame):
+  def Map_Speak(self,h, w, hand_landmarks, frame):
     indicador_8 = hand_landmarks.landmark[8]
     indicador_8_x, indicador_8_y = int(indicador_8.x * w), int(indicador_8.y * h)
     indicador_5 = hand_landmarks.landmark[5]
@@ -114,8 +111,7 @@ class Hands:
         mindinho_20_y > mindinho_17_y):              
         return True
   
-  # Ask Jarvis With Photo
-  def Map_Squid(self, h, w, hand_landmarks, frame):
+  def Map_Squid(self,h, w, hand_landmarks, frame):
     indicador_8 = hand_landmarks.landmark[8]
     indicador_8_x, indicador_8_y = int(indicador_8.x * w), int(indicador_8.y * h)
     indicador_6 = hand_landmarks.landmark[6]
@@ -143,8 +139,7 @@ class Hands:
           anelar_16_y > anelar_13_y): 
           return True
   
-  # Ask Jarvis Video
-  def Map_Rock(self, h, w, hand_landmarks, frame):
+  def Map_Rock(self,h, w, hand_landmarks, frame):
     indicador_8 = hand_landmarks.landmark[8]
     indicador_8_x, indicador_8_y = int(indicador_8.x * w), int(indicador_8.y * h)
     indicador_6 = hand_landmarks.landmark[6]

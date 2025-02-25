@@ -73,7 +73,7 @@ class Control:
     except LookupError:         
       self.ACTION = False
       return("Sem perguntas!")
-  
+
   # Functions control Jarvis
   
   ## Audio to Audio

@@ -1,7 +1,6 @@
 import jarvis
 import hands
 import control
-from ProjectConfig import Config_Project
 
 import cv2
 import time
@@ -16,8 +15,7 @@ async def main():
   hands_system = hands.Hands()
   with ThreadPoolExecutor() as executor:
     
-    # Preferencia de camera
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(1)
 
     while cap.isOpened():
         ret, frame = cap.read()
@@ -68,8 +66,4 @@ async def main():
     cv2.destroyAllWindows()
 
 if __name__ == "__main__":
-  try:
-    Config_Project()
-    asyncio.run(main())
-  except:
-    asyncio.run(main())
+  asyncio.run(main())

@@ -11,3 +11,5 @@ pathlib
 edge-tts
 playsound
 mpmath
+mediapipe
+pygame
