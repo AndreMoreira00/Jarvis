@@ -40,38 +40,24 @@ class Control: # Classe de Controle de funções
   # Capture Audio
   def Capture_Audio(self):
     self.ACTION = True
-    audio = pyaudio.PyAudio() # Acesso ao microfone
-    stream = audio.open( # Formato de audio para salvar
-      input = True,
-      format = pyaudio.paInt16,
-      channels = 1,
-      rate = 44000,
-      frames_per_buffer = 1024,
-    )
-    frames = [] # Lista para salvar o audio
-    timeout = 15 # Duração do audio 15s mas isso preecisa ser ajustado para o usuario escolher
-    timeout_start = time.time() # Pega o tempo atual
-    try:
-      while time.time() < timeout_start + timeout:
-        bloco = stream.read(1024) # Carrega o audio pelo microfone
-        frames.append(bloco) # Salva o audio
-    except KeyboardInterrupt:
-        pass
-    arquivo_final = wave.open("audio/gravacao.wav", "wb") # Salva o audio
-    arquivo_final.setnchannels(1) # Usa o microfone do canal 1
-    arquivo_final.setframerate(44000) # Frequencia do microfone
-    arquivo_final.setsampwidth(audio.get_sample_size(pyaudio.paInt16)) # Tamanho do audio
-    arquivo_final.writeframes(b"".join(frames)) # Junta todos os frames de audio
-    arquivo_final.close() # Fecha o microfone
-    r = sr.Recognizer() # IA que tranforma audio em texto
-    with sr.WavFile("audio/gravacao.wav") as source: # Lê o arquivo de audio e transcreve  
-      audio = r.record(source)                        
-    try:
-      self.ACTION = False
-      return (""+r.recognize_google(audio, language="pt-BR")) # retorna a transcrição
-    except LookupError:         
-      self.ACTION = False
-      return("Sem perguntas!")
+    microfone = sr.Recognizer()
+    microfone.pause_threshold = 0.8
+    microfone.dynamic_energy_threshold = False
+    microfone.energy_threshold = 300
+    microfone.maxAlternatives = 1
+    with sr.Microphone() as source:
+      with ThreadPoolExecutor() as executor:
+        executor.submit(microfone.adjust_for_ambient_noise, source, duration=2)
+        try:
+          audio = executor.submit(microfone.listen, source, timeout=5, phrase_time_limit=5)
+          self.ACTION = False
+          return (""+microfone.recognize_google(audio.result(), language="pt-BR")) 
+        except sr.UnknownValueError:
+            return "Sem Pergunta"
+        except sr.RequestError:
+            return "Erro de conexão"
+        except Exception as e:
+            return f"Erro inesperado: {str(e)}"
 
   # Functions control Jarvis
   

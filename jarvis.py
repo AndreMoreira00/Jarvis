@@ -34,7 +34,7 @@ class Jarvis: # Classe do Jarvis
       # Config Voice
       VOICES = ["pt-BR-AntonioNeural"] # Escolhendo a voz do Jarvis
       self.VOICE = VOICES[0] 
-      self.OUTPUT_FILE = "response/translate.mp3" # Caminho onde o audio da resposta do Jarvis vai ser salva
+      # self.OUTPUT_FILE = "response/translate.mp3" # Caminho onde o audio da resposta do Jarvis vai ser salva
       # Config Paths
       self.PATH_FILE = "./response/translate.mp3" # Caminho onde o audio da resposta do Jarvis vai ser executado
       mixer.init() # Iniciando o serviço de audio do pygame
@@ -50,7 +50,7 @@ class Jarvis: # Classe do Jarvis
     # Função que recebe a resposta do Gemini em texto e tranforma em audio com a voz do Jarvis
     async def Translate(self, text) -> None:
       communicate = edge_tts.Communicate(text, self.VOICE) # Conversão de texto para audio
-      await communicate.save(self.OUTPUT_FILE) # Salva a conversão
+      await communicate.save(self.PATH_FILE) # Salva a conversão
     
     # Response Text to Text
     # Função que recebe nossa pergunta e manda para Gemini, depois que ele retorna a resposta ela é transformada em audio

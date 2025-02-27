@@ -3,6 +3,7 @@ Video/
 audio/
 Image/
 Response/
-testes/
+testes_unitarios/
+testes_complexidade/
 Dockerfile*
 docs/
