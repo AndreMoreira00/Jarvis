@@ -8,6 +8,8 @@ import edge_tts # Biblioteca para tranformar a resposta do Gemini na voz do Jarv
 from pygame import mixer # Biblioteca que execulta a voz do Jarvis
 import time # Biblioteca de tempo para controle de algumas funções
 
+mixer.init() # Iniciando o serviço de audio do pygame
+
 class Jarvis: # Classe do Jarvis
     def __init__(self): # Função que inicia as "caracteristicas" do Jarvis
       load_dotenv() # Carrega a variavel de ambiente (Key de acesso a API Gemini)
@@ -29,7 +31,7 @@ class Jarvis: # Classe do Jarvis
       # Config model Genai
       genai.configure(api_key=self.API_KEY) # Inicia os serviços da Gemini passando a Key de acesso
       self.model = genai.GenerativeModel( # Configurando o Serviço
-          "gemini-2.0-flash", system_instruction=self.template # Escolhendo o modelo do Gemini
+          "gemini-2.0-flash-lite", system_instruction=self.template # Escolhendo o modelo do Gemini
       )
       # Config Voice
       VOICES = ["pt-BR-AntonioNeural"] # Escolhendo a voz do Jarvis
@@ -37,7 +39,7 @@ class Jarvis: # Classe do Jarvis
       # self.OUTPUT_FILE = "response/translate.mp3" # Caminho onde o audio da resposta do Jarvis vai ser salva
       # Config Paths
       self.PATH_FILE = "./response/translate.mp3" # Caminho onde o audio da resposta do Jarvis vai ser executado
-      mixer.init() # Iniciando o serviço de audio do pygame
+      
     
     # Delete Cahche Video
     # Função que apaga os arquivos salvos na memoria do Gemini. (É preciso para não sobrecarregar a memória)

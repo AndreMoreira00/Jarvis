@@ -1,6 +1,6 @@
 import time # Biblioteca de tempo para controle de algumas funções
 import cv2 # Biblioteca que da acessoa câmera
-import pyaudio # Vamos remover essa merda
+# import pyaudio # Vamos remover essa merda
 import wave  # Biblioteca para salvar o video gravado
 import speech_recognition as sr # Biblioteca para transformar audio em texto
 from concurrent.futures import ThreadPoolExecutor # Torna as funções sincronas
