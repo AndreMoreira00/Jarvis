@@ -4,6 +4,7 @@ import cv2 # Biblioteca que da acessoa câmera
 import time # Biblioteca de tempo para controle de algumas funções
 import asyncio  # Torna as funções assincronas
 from concurrent.futures import ThreadPoolExecutor # Torna as funções sincronas
+import threading
 
 async def init_hands(): # Função par tornar a iniciação sincrona
   loop = asyncio.get_running_loop() # Aguarda terminar a funçõao
@@ -15,8 +16,9 @@ async def init_control(): # Função par tornar a iniciação sincrona
     with ThreadPoolExecutor() as executor:
         return await loop.run_in_executor(executor, control.Control)
       
-def verificar_gesto(gesto, func, *args):
-    return gesto if func(*args) else None
+def verificar_gesto(act, func, *args): # Faz a verificacao de cada gesto de mão
+    if func(*args): # Passa a função e os parametos para serem verificados
+      threading.Thread(act, daemon=True).start() # Executa a ação associada em thread
 
 async def main(): # Função de execução principal
   hands_task = asyncio.create_task(init_hands())
@@ -29,6 +31,7 @@ async def main(): # Função de execução principal
   
   with ThreadPoolExecutor() as executor: # Torna as funções sincronas
     
+    # Dicionario de gestos (Função que o gesto execulta; Função que identifica o gesto; Mão que é feita o gesto) 
     verificacoes = [
       (lambda: control_functions.Capture_Photo(frame), hands_system.Map_Ok, "Right"),
       (lambda: control_functions.Capture_Video(cap), hands_system.Map_Positive, "Left"),
@@ -55,14 +58,15 @@ async def main(): # Função de execução principal
                 
                 h, w, _ = frame.shape # Constantes de proporção da camera h = heigth, w = width, _ = canais
                 
-                futures = {
+                futures = { # Faz com que todos os gestos sejam verificados ao mesmo tempo e diminue o processamento
                   executor.submit(verificar_gesto, act, func, h, w, hand_landmarks, frame): act
                   for act, func, lado in verificacoes
                   if hand_label == lado
                 }
                 
+                # Processando os resultados
                 for future in futures:
-                  future.result()
+                  future.result() # Aguarda a verificacao
                       
                 hands_system.mp_drawing.draw_landmarks(frame, hand_landmarks, hands_system.mp_hands.HAND_CONNECTIONS) # Reenderizar os pontos e retas na tela
             
