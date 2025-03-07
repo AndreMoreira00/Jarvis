@@ -1,7 +1,6 @@
 numpy
 opencv-python
 nest-asyncio
-# pyaudio
 SpeechRecognition
 threadpoolctl
 python-dotenv

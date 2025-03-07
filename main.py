@@ -1,13 +1,11 @@
 import hands # Importação da classe do Hands
 import control # Importação da classe do Control
-
 import cv2 # Biblioteca que da acessoa câmera
 import time # Biblioteca de tempo para controle de algumas funções
 import asyncio  # Torna as funções assincronas
 from concurrent.futures import ThreadPoolExecutor # Torna as funções sincronas
 
 async def main(): # Função de execução principal
-  
   hands_system = hands.Hands() # Criação do objeto Hands
   control_functions = control.Control() # Criação do objeto Control
   with ThreadPoolExecutor() as executor: # Torna as funções sincronas
@@ -32,7 +30,7 @@ async def main(): # Função de execução principal
                 
                 hand_label = hand_handedness.classification[0].label # Identificação da mão direita e esquerda
                 
-                h, w, _ = frame.shape # Constantes de proporção da camera h = heigth, w = width, _ = depth
+                h, w, _ = frame.shape # Constantes de proporção da camera h = heigth, w = width, _ = canais
 
                 # Verificação do gesto de mão OK
                 if hand_label == "Right" and hands_system.Map_Ok(h, w, hand_landmarks, frame) and control_functions.ACTION == False:
