@@ -5,9 +5,22 @@ import time # Biblioteca de tempo para controle de algumas funções
 import asyncio  # Torna as funções assincronas
 from concurrent.futures import ThreadPoolExecutor # Torna as funções sincronas
 
+async def init_hands(): # Função par tornar a iniciação sincrona
+  loop = asyncio.get_running_loop() # Aguarda terminar a funçõao
+  with ThreadPoolExecutor() as executor:
+      return await loop.run_in_executor(executor, hands.Hands)
+
+async def init_control(): # Função par tornar a iniciação sincrona 
+    loop = asyncio.get_running_loop() # Aguarda terminar a funçõao
+    with ThreadPoolExecutor() as executor:
+        return await loop.run_in_executor(executor, control.Control)
+
 async def main(): # Função de execução principal
-  hands_system = hands.Hands() # Criação do objeto Hands
-  control_functions = control.Control() # Criação do objeto Control
+  hands_task = asyncio.create_task(init_hands())
+  control_task = asyncio.create_task(init_control())
+  
+  hands_system, control_functions = await asyncio.gather(hands_task, control_task) # Criação do objeto Hands e Control 
+  
   with ThreadPoolExecutor() as executor: # Torna as funções sincronas
     
     # Preferencia de camera
