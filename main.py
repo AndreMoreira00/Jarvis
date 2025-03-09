@@ -21,9 +21,9 @@ async def main(): # Função de execução principal
     checks = [
       (lambda: control_functions.Capture_Photo(frame), hands_system.Map_Ok, "Right"), # func_exe, func_act, side
       (lambda: control_functions.Capture_Video(cap), hands_system.Map_Positive, "Left"),
-      (lambda: control_functions.Audio_to_Audio(), hands_system.Map_Speak, "Right"),
-      (lambda: control_functions.Image_Audio(frame), hands_system.Map_Squid, "Left"),
-      (lambda: control_functions.Video_Audio(cap), hands_system.Map_Rock, "Right"),
+      (lambda: asyncio.run(control_functions.Audio_to_Audio()), hands_system.Map_Speak, "Right"),
+      (lambda: asyncio.run(control_functions.Image_Audio(frame)), hands_system.Map_Squid, "Left"),
+      (lambda: asyncio.run(control_functions.Video_Audio(cap)), hands_system.Map_Rock, "Right"),
     ]
     
     while cap.isOpened(): # Execulta as funçõoes de dentro enquanto a camera está aberta
