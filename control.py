@@ -4,7 +4,7 @@ import wave  # Biblioteca para salvar o video gravado
 import speech_recognition as sr  # Biblioteca para transformar audio em texto
 from concurrent.futures import ThreadPoolExecutor  # Torna as funções sincronas
 import jarvis  # Importação da classe do Jarvis
-
+import asyncio
 
 class Control:  # Classe de Controle de funções
     def __init__(self):
@@ -81,9 +81,7 @@ class Control:  # Classe de Controle de funções
     ## Audio to Audio
     async def Audio_to_Audio(self) -> None:
         prompt = self.Capture_Audio()  # Captura o audio
-        await self.jarvis_system.Text_To_Text(
-            prompt
-        )  # Envia uma pergunta de texto ao Jarvis
+        asyncio.create_task(self.jarvis_system.Text_To_Text(prompt))  # Envia uma pergunta de texto ao Jarvis
 
     ## Image Audio
     async def Image_Audio(self, frame) -> None:
@@ -94,9 +92,7 @@ class Control:  # Classe de Controle de funções
             prompt = (
                 future_audio.result()
             )  # Pega a transcrição do audio e passa como prompt
-        await self.jarvis_system.Image_To_Text(
-            image_path, prompt
-        )  # Envia uma pergunta de texto e imagem ao Jarvis
+        asyncio.create_task(self.jarvis_system.Image_To_Text(image_path, prompt))  # Envia uma pergunta de texto e imagem ao Jarvis
 
     ## Video Audio
     async def Video_Audio(self, cap) -> None:
@@ -107,6 +103,4 @@ class Control:  # Classe de Controle de funções
             prompt = (
                 future_audio.result()
             )  # Pega a transcrição do audio e passa como prompt
-            await self.jarvis_system.Video_To_Text(
-                video_path, prompt
-            )  # Envia uma pergunta de texto e video ao Jarvis
+            asyncio.create_task(self.jarvis_system.Video_To_Text(video_path, prompt))  # Envia uma pergunta de texto e video ao Jarvis

@@ -6,20 +6,6 @@ import asyncio  # Torna as funções assincronas
 from concurrent.futures import ThreadPoolExecutor # Torna as funções sincronas
 import threading
 
-async def init_hands(): # Função par tornar a iniciação sincrona
-  loop = asyncio.get_running_loop() # Aguarda terminar a funçõao
-  with ThreadPoolExecutor() as executor:
-      return await loop.run_in_executor(executor, hands.Hands)
-
-async def init_control(): # Função par tornar a iniciação sincrona 
-    loop = asyncio.get_running_loop() # Aguarda terminar a funçõao
-    with ThreadPoolExecutor() as executor:
-        return await loop.run_in_executor(executor, control.Control)
-      
-def verificar_gesto(act, func, *args): # Faz a verificacao de cada gesto de mão
-    if func(*args): # Passa a função e os parametos para serem verificados
-      threading.Thread(act, daemon=True).start() # Executa a ação associada em thread
-
 async def main(): # Função de execução principal
   hands_task = asyncio.create_task(init_hands())
   control_task = asyncio.create_task(init_control())
@@ -32,7 +18,7 @@ async def main(): # Função de execução principal
   with ThreadPoolExecutor() as executor: # Torna as funções sincronas
     
     # Dicionario de gestos (Função que o gesto execulta; Função que identifica o gesto; Mão que é feita o gesto) 
-    verificacoes = [
+    checks = [
       (lambda: control_functions.Capture_Photo(frame), hands_system.Map_Ok, "Right"),
       (lambda: control_functions.Capture_Video(cap), hands_system.Map_Positive, "Left"),
       (lambda: control_functions.Audio_to_Audio(), hands_system.Map_Speak, "Right"),
@@ -59,9 +45,9 @@ async def main(): # Função de execução principal
                 h, w, _ = frame.shape # Constantes de proporção da camera h = heigth, w = width, _ = canais
                 
                 futures = { # Faz com que todos os gestos sejam verificados ao mesmo tempo e diminue o processamento
-                  executor.submit(verificar_gesto, act, func, h, w, hand_landmarks, frame): act
-                  for act, func, lado in verificacoes
-                  if hand_label == lado
+                  executor.submit(Check_gesture, func_act, func_exe, h, w, hand_landmarks, frame): act
+                  for func_act, func_exe, side in checks # Verificacao do lado antes de ir para o gesto
+                  if hand_label == side
                 }
                 
                 # Processando os resultados
@@ -77,6 +63,21 @@ async def main(): # Função de execução principal
         
     cap.release() # Fecha a camera
     cv2.destroyAllWindows() # Destroi a tela da camera
+    
+# Funcoes da Main!
+async def init_hands(): # Função par tornar a iniciação sincrona
+  loop = asyncio.get_running_loop() # Aguarda terminar a funçõao
+  with ThreadPoolExecutor() as executor:
+      return await loop.run_in_executor(executor, hands.Hands)
+
+async def init_control(): # Função par tornar a iniciação sincrona 
+    loop = asyncio.get_running_loop() # Aguarda terminar a funçõao
+    with ThreadPoolExecutor() as executor:
+        return await loop.run_in_executor(executor, control.Control)
+      
+def Check_gesture(func_act, func_exe, *args): # Faz a verificacao de cada gesto de mão
+    if func_exe(*args): # Passa a função e os parametos para serem verificados
+      threading.Thread(func_act, daemon=True).start() # Executa a ação associada em thread
 
 if __name__ == "__main__": # Verificação de arquivo principal com prioridade de execução
   asyncio.run(main()) # Execultar a função principal de forma assincrona
