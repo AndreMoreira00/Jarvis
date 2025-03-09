@@ -19,7 +19,7 @@ async def main(): # Função de execução principal
     
     # Dicionario de gestos (Função que o gesto execulta; Função que identifica o gesto; Mão que é feita o gesto) 
     checks = [
-      (lambda: control_functions.Capture_Photo(frame), hands_system.Map_Ok, "Right"),
+      (lambda: control_functions.Capture_Photo(frame), hands_system.Map_Ok, "Right"), # func_exe, func_act, side
       (lambda: control_functions.Capture_Video(cap), hands_system.Map_Positive, "Left"),
       (lambda: control_functions.Audio_to_Audio(), hands_system.Map_Speak, "Right"),
       (lambda: control_functions.Image_Audio(frame), hands_system.Map_Squid, "Left"),
@@ -44,10 +44,12 @@ async def main(): # Função de execução principal
                 
                 h, w, _ = frame.shape # Constantes de proporção da camera h = heigth, w = width, _ = canais
                 
+                distance = CalculateNormalDistance(h, hand_landmarks) # Distancia da mao analisada
+                
                 futures = { # Faz com que todos os gestos sejam verificados ao mesmo tempo e diminue o processamento
-                  executor.submit(Check_gesture, func_act, func_exe, h, w, hand_landmarks, frame): act
-                  for func_act, func_exe, side in checks # Verificacao do lado antes de ir para o gesto
-                  if hand_label == side
+                  executor.submit(Check_gesture, func_exe, func_act, h, w, hand_landmarks, frame)
+                  for func_exe, func_act, side in checks # Verificacao do lado antes de ir para o gesto
+                  if hand_label == side and distance < 150 # So e execultado a executor.submit(Check_gesture ... se essa condicao for verdadeira
                 }
                 
                 # Processando os resultados
@@ -75,9 +77,18 @@ async def init_control(): # Função par tornar a iniciação sincrona
     with ThreadPoolExecutor() as executor:
         return await loop.run_in_executor(executor, control.Control)
       
-def Check_gesture(func_act, func_exe, *args): # Faz a verificacao de cada gesto de mão
-    if func_exe(*args): # Passa a função e os parametos para serem verificados
-      threading.Thread(func_act, daemon=True).start() # Executa a ação associada em thread
+def Check_gesture(func_exe, func_act, *args): # Faz a verificacao de cada gesto de mão
+    if func_act(*args): # Passa a função e os parametos para serem verificados
+      threading.Thread(func_exe, daemon=True).start() # Executa a ação associada em thread
+
+def CalculateNormalDistance(h, hand_landmarks): # Calcula a distancia da mao analisada
+  w = 7.87 # 20cm -> 8pl # Largura media de uma mao
+  f = 300.154 # Disfoco da camera 
+  polegar_4_x = int(hand_landmarks.landmark[4].x * h)
+  mindinho_20_x = int(hand_landmarks.landmark[20].x * h)
+  p =  mindinho_20_x - polegar_4_x # Largura relativa
+  D = (w*f)/p # Distancia em polegadas
+  return D*2.54
 
 if __name__ == "__main__": # Verificação de arquivo principal com prioridade de execução
   asyncio.run(main()) # Execultar a função principal de forma assincrona
