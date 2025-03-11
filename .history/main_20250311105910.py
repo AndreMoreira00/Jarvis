@@ -125,9 +125,9 @@ async def main(): # Função de execução principal
               # Reenderizar os pontos e retas na tela
               hands_system.mp_drawing.draw_landmarks(frame, hand_landmarks, hands_system.mp_hands.HAND_CONNECTIONS)
           
-        cv2.imshow("MediaPipe Hands", frame) # Criar uma tela com a visao da camera
+      cv2.imshow("MediaPipe Hands", frame) # Criar uma tela com a visao da camera
       
-        if cv2.waitKey(1) & 0xFF == ord('q'): # Encerra o programa clicando Q
+      if cv2.waitKey(1) & 0xFF == ord('q'): # Encerra o programa clicando Q
           break
       
   # Libera recursos ao finalizar

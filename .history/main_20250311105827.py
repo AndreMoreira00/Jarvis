@@ -66,17 +66,17 @@ async def main(): # Função de execução principal
         if gesture_cooldown > 0:
             gesture_cooldown -= 1
 
-        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB) # Configuração de cores para a identificação das mãos
-        results = hands_system.hands.process(rgb_frame) # Resposta da identificação das mãos
-        
+      rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB) # Configuração de cores para a identificação das mãos
+      results = hands_system.hands.process(rgb_frame) # Resposta da identificação das mãos
+      
       # Indicador visual para mostrar quando está gravando
-        if gravando:
+      if gravando:
           cv2.putText(frame, "Gravando...", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
           # Grava o frame atual se estiver gravando
           if out is not None:
               out.write(frame)
       
-        if results.multi_hand_landmarks and results.multi_handedness and gesture_cooldown == 0: # Marcaçãos dos pontos e retas nas mãos
+      if results.multi_hand_landmarks and results.multi_handedness and gesture_cooldown == 0: # Marcaçãos dos pontos e retas nas mãos
           for hand_landmarks, hand_handedness in zip(results.multi_hand_landmarks, results.multi_handedness): # Obtemos as previsões em tempo real dos pontos e das retas
               
               hand_label = hand_handedness.classification[0].label # Identificação da mão direita e esquerda
@@ -125,9 +125,9 @@ async def main(): # Função de execução principal
               # Reenderizar os pontos e retas na tela
               hands_system.mp_drawing.draw_landmarks(frame, hand_landmarks, hands_system.mp_hands.HAND_CONNECTIONS)
           
-        cv2.imshow("MediaPipe Hands", frame) # Criar uma tela com a visao da camera
+      cv2.imshow("MediaPipe Hands", frame) # Criar uma tela com a visao da camera
       
-        if cv2.waitKey(1) & 0xFF == ord('q'): # Encerra o programa clicando Q
+      if cv2.waitKey(1) & 0xFF == ord('q'): # Encerra o programa clicando Q
           break
       
   # Libera recursos ao finalizar

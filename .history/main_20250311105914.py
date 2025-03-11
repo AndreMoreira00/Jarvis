@@ -127,7 +127,7 @@ async def main(): # Função de execução principal
           
         cv2.imshow("MediaPipe Hands", frame) # Criar uma tela com a visao da camera
       
-        if cv2.waitKey(1) & 0xFF == ord('q'): # Encerra o programa clicando Q
+      if cv2.waitKey(1) & 0xFF == ord('q'): # Encerra o programa clicando Q
           break
       
   # Libera recursos ao finalizar
