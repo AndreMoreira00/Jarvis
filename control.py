@@ -4,6 +4,7 @@ import wave  # Biblioteca para salvar o video gravado
 import speech_recognition as sr  # Biblioteca para transformar audio em texto
 from concurrent.futures import ThreadPoolExecutor  # Torna as funções sincronas
 import jarvis  # Importação da classe do Jarvis
+import asyncio
 
 
 class Control:  # Classe de Controle de funções
@@ -57,7 +58,7 @@ class Control:  # Classe de Controle de funções
         microfone.energy_threshold = 300  # Hrz do microfine
         microfone.maxAlternatives = 1  # Numero de palavras para a previsão
         with sr.Microphone() as source:  # Enquanto o microfone estiver aberto
-            with ThreadPoolExecutor() as executor:  # Torna as funções sincronas
+            with ThreadPoolExecutor() as executor:  # Execulta as funções sincronas
                 executor.submit(
                     microfone.adjust_for_ambient_noise, source, duration=2
                 )  # Configuração do microfone
@@ -81,9 +82,7 @@ class Control:  # Classe de Controle de funções
     ## Audio to Audio
     async def Audio_to_Audio(self) -> None:
         prompt = self.Capture_Audio()  # Captura o audio
-        await self.jarvis_system.Text_To_Text(
-            prompt
-        )  # Envia uma pergunta de texto ao Jarvis
+        await asyncio.create_task(self.jarvis_system.Text_To_Text(prompt))  # Envia uma pergunta de texto ao Jarvis
 
     ## Image Audio
     async def Image_Audio(self, frame) -> None:

@@ -11,11 +11,11 @@ async def main(): # Função de execução principal
   
   hands_system, control_functions = await asyncio.gather(hands_task, control_task) # Criação do objeto Hands e Control 
   
+  # Preferencia de camera
+  cap = cv2.VideoCapture(0)
+  
   with ThreadPoolExecutor() as executor: # Torna as funções sincronas
     
-    # Preferencia de camera
-    cap = cv2.VideoCapture(0)
-
     # Execulta as funçõoes de dentro enquanto a camera está aberta
     while cap.isOpened():
         ret, frame = cap.read() # Captura de cada frame da camera. Ret é um parametro para verificar a captura
@@ -46,17 +46,14 @@ async def main(): # Função de execução principal
                 # Verificação do gesto de mão Levantar dedo
                 if hand_label == "Right" and hands_system.Map_Speak(h, w, hand_landmarks, frame) and control_functions.ACTION == False:
                   await control_functions.Audio_to_Audio() # Chamada para o controle para fazer uma pergunta e agauarda a resposta
-                  time.sleep(0.5)
-                
+
                 # Verificação do gesto de mão Faz o L
                 if hand_label == "Left" and hands_system.Map_Squid(h, w, hand_landmarks, frame):
                   await control_functions.Image_Audio(frame) # Chamada para o controle para fazer uma pergunta, analisar uma imagem e agauardar a resposta
-                  time.sleep(0.5)
-
+                  
                 # Verificação do gesto de mão Rock
                 if hand_label == "Right" and hands_system.Map_Rock(h, w, hand_landmarks, frame):
                   await control_functions.Video_Audio(cap) # Chamada para o controle para fazer uma pergunta, analisar um video e agauardar a resposta
-                  time.sleep(0.5) 
                       
                 hands_system.mp_drawing.draw_landmarks(frame, hand_landmarks, hands_system.mp_hands.HAND_CONNECTIONS) # Reenderizar os pontos e retas na tela
             
