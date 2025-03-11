@@ -59,11 +59,5 @@ class Jarvis: # Classe do Jarvis
     async def Text_To_Text(self, prompt) -> None:
       response = self.model.generate_content(prompt) # Salva a resposta da Gemini
       await self.Translate(response.text) # Aguarda a função de Translate
-      SOUND = mixer.Sound(self.PATH_FILE)
-      SOUND.play() # Execulta a resposta
-      t = 0
-      while t <= SOUND.get_length():
-        time.sleep(1)
-        t+=1
       SOUND.stop()
       self.Delete_Cahche_Files()

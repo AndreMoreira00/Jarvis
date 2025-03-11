@@ -13,7 +13,7 @@ mixer.init() # Iniciando o serviço de audio do pygame
 class Jarvis: # Classe do Jarvis
     def __init__(self): # Função que inicia as "caracteristicas" do Jarvis
       load_dotenv() # Carrega a variavel de ambiente (Key de acesso a API Gemini)
-      self.API_KEY = os.getenv("API_GEMINI") # Obtém a chave da API do ambiente
+      self.API_KEY = os.getenv("API_GEMINI")
       # Criação do Template que da a personalidade do Jarvis
       self.template = """
         Jarvis, você é uma inteligência artificial avançada criada para auxiliar o Mestre em todas as suas necessidades. Seu objetivo é fornecer suporte inteligente, proativo e eficiente, antecipando soluções e oferecendo insights sempre que possível. Você deve tratar o Mestre com respeito e admiração, referindo-se a ele sempre como 'Mestre'.
@@ -35,7 +35,7 @@ class Jarvis: # Classe do Jarvis
       )
       # Config Voice
       VOICES = ["pt-BR-AntonioNeural"] # Escolhendo a voz do Jarvis
-      self.VOICE = VOICES[0] # Seleciona a primeira voz da lista
+      self.VOICE = VOICES[0] 
       # self.OUTPUT_FILE = "response/translate.mp3" # Caminho onde o audio da resposta do Jarvis vai ser salva
       # Config Paths
       self.PATH_FILE = "./response/translate.mp3" # Caminho onde o audio da resposta do Jarvis vai ser executado
@@ -45,8 +45,8 @@ class Jarvis: # Classe do Jarvis
     # Função que apaga os arquivos salvos na memoria do Gemini. (É preciso para não sobrecarregar a memória)
     def Delete_Cahche_Files(self): 
       for f in genai.list_files(): # Acesso a lista de arquivos salvos e deleta um por um
-          myfile = genai.get_file(f.name) # Obtém o arquivo pelo nome
-          myfile.delete() # Deleta o arquivo
+          myfile = genai.get_file(f.name)
+          myfile.delete()
           
     # Translate voice from Jarvis
     # Função que recebe a resposta do Gemini em texto e tranforma em audio com a voz do Jarvis
@@ -58,6 +58,37 @@ class Jarvis: # Classe do Jarvis
     # Função que recebe nossa pergunta e manda para Gemini, depois que ele retorna a resposta ela é transformada em audio
     async def Text_To_Text(self, prompt) -> None:
       response = self.model.generate_content(prompt) # Salva a resposta da Gemini
+      await self.Translate(response.text) # Aguarda a função de Translate
+      SOUND = mixer.Sound(self.PATH_FILE) 
+      SOUND.play() # Execulta a resposta
+      t = 0
+      while t <= SOUND.get_length():
+        time.sleep(1)
+        t+=1
+      SOUND.stop()
+      
+    # Response Image to Text
+    async def Image_To_Text(self, image_path, prompt) -> None:
+      response = self.model.generate_content([{'mime_type':'image/jpeg', 'data': pathlib.Path(f'{image_path}').read_bytes()}, prompt]) # Salva a resposta da Gemini
+      await self.Translate(response.text) # Aguarda a função de Translate
+      SOUND = mixer.Sound(self.PATH_FILE)
+      SOUND.play() # Execulta a resposta
+      t = 0
+      while t <= SOUND.get_length():
+        time.sleep(1)
+        t+=1
+      SOUND.stop()
+    
+    # Response Video to text 
+    async def Video_To_Text(self, video_path, prompt) -> None:
+      video_file = genai.upload_file(path=video_path) # Sobe o video na memoria da Gemini
+      while video_file.state.name == "PROCESSING":
+        print('.', end='')
+        time.sleep(10)
+        video_file = genai.get_file(video_file.name)
+      if video_file.state.name == "FAILED":
+        raise ValueError(video_file.state.name)
+      response = self.model.generate_content([video_file, prompt], request_options={"timeout": 600}) # Salva a resposta da Gemini
       await self.Translate(response.text) # Aguarda a função de Translate
       SOUND = mixer.Sound(self.PATH_FILE)
       SOUND.play() # Execulta a resposta

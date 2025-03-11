@@ -53,7 +53,7 @@ async def main(): # Função de execução principal
               
               # Verificação do gesto de mão Positivo (joinha) para iniciar/parar a gravação
               if hand_label == "Left" and hands_system.Map_Positive(h, w, hand_landmarks, frame):
-                  if not gravando:
+                  if not q:
                       # Inicia a gravação
                       print("Iniciando gravação com gesto de joinha...")
                       fourcc = cv2.VideoWriter_fourcc(*'XVID')
