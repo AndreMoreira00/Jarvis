@@ -6,12 +6,15 @@ import asyncio  # Torna as funções assincronas
 from concurrent.futures import ThreadPoolExecutor # Torna as funções sincronas
 
 async def main(): # Função de execução principal
-  hands_system = hands.Hands() # Criação do objeto Hands
-  control_functions = control.Control() # Criação do objeto Control
+  hands_task = asyncio.create_task(init_hands())
+  control_task = asyncio.create_task(init_control())
+  
+  hands_system, control_functions = await asyncio.gather(hands_task, control_task) # Criação do objeto Hands e Control 
+  
   with ThreadPoolExecutor() as executor: # Torna as funções sincronas
     
     # Preferencia de camera
-    cap = cv2.VideoCapture(1)
+    cap = cv2.VideoCapture(0)
 
     # Execulta as funçõoes de dentro enquanto a camera está aberta
     while cap.isOpened():
@@ -64,6 +67,17 @@ async def main(): # Função de execução principal
         
     cap.release() # Fecha a camera
     cv2.destroyAllWindows() # Destroi a tela da camera
+
+# Funcoes da Main!
+async def init_hands(): # Função par tornar a iniciação sincrona
+  loop = asyncio.get_running_loop() # Aguarda terminar a funçõao
+  with ThreadPoolExecutor() as executor:
+      return await loop.run_in_executor(executor, hands.Hands)
+
+async def init_control(): # Função par tornar a iniciação sincrona 
+    loop = asyncio.get_running_loop() # Aguarda terminar a funçõao
+    with ThreadPoolExecutor() as executor:
+        return await loop.run_in_executor(executor, control.Control)
 
 if __name__ == "__main__": # Verificação de arquivo principal com prioridade de execução
   asyncio.run(main()) # Execultar a função principal de forma assincrona
