@@ -93,9 +93,7 @@ class Control:  # Classe de Controle de funções
             prompt = (
                 future_audio.result()
             )  # Pega a transcrição do audio e passa como prompt
-        await self.jarvis_system.Image_To_Text(
-            image_path, prompt
-        )  # Envia uma pergunta de texto e imagem ao Jarvis
+        await asyncio.create_task(self.jarvis_system.Image_To_Text(image_path, prompt))  # Envia uma pergunta de texto e imagem ao Jarvis
 
     ## Video Audio
     async def Video_Audio(self, cap) -> None:
@@ -106,6 +104,4 @@ class Control:  # Classe de Controle de funções
             prompt = (
                 future_audio.result()
             )  # Pega a transcrição do audio e passa como prompt
-            await self.jarvis_system.Video_To_Text(
-                video_path, prompt
-            )  # Envia uma pergunta de texto e video ao Jarvis
+            await asyncio.create_task(self.jarvis_system.Video_To_Text(video_path, prompt))  # Envia uma pergunta de texto e video ao Jarvis
