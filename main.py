@@ -13,7 +13,7 @@ async def main(): # Função de execução principal
   hands_system, control_functions = await asyncio.gather(hands_task, control_task) # Criação do objeto Hands e Control 
   
   # Preferencia de camera
-  cap = cv2.VideoCapture(0)
+  cap = cv2.VideoCapture(1)
   
   with ThreadPoolExecutor() as executor: # Torna as funções sincronas
     
@@ -21,9 +21,9 @@ async def main(): # Função de execução principal
     checks = [
       (lambda: control_functions.Capture_Photo(frame), hands_system.Map_Ok, "Right"), # func_exe, func_act, side
       (lambda: control_functions.Capture_Video(cap), hands_system.Map_Positive, "Left"),
-      (lambda: asyncio.run(control_functions.Audio_to_Audio()), hands_system.Map_Speak, "Right"),
-      (lambda: asyncio.run(control_functions.Image_Audio(frame)), hands_system.Map_Squid, "Left"),
-      (lambda: asyncio.run(control_functions.Video_Audio(cap)), hands_system.Map_Rock, "Right"),
+      (lambda: asyncio.create_task(control_functions.Audio_to_Audio()), hands_system.Map_Speak, "Right"),
+      (lambda: asyncio.create_task(control_functions.Image_Audio(frame)), hands_system.Map_Squid, "Left"),
+      (lambda: asyncio.create_task(control_functions.Video_Audio(cap)), hands_system.Map_Rock, "Right"),
     ]
     
     while cap.isOpened(): # Execulta as funçõoes de dentro enquanto a camera está aberta
@@ -44,12 +44,12 @@ async def main(): # Função de execução principal
                 
                 h, w, _ = frame.shape # Constantes de proporção da camera h = heigth, w = width, _ = canais
                 
-                distance = CalculateNormalDistance(h, hand_landmarks) # Distancia da mao analisada
+                # distance = CalculateNormalDistance(h, hand_landmarks) # Distancia da mao analisada
                 
                 futures = { # Faz com que todos os gestos sejam verificados ao mesmo tempo e diminue o processamento
                   executor.submit(Check_gesture, func_exe, func_act, h, w, hand_landmarks, frame)
                   for func_exe, func_act, side in checks # Verificacao do lado antes de ir para o gesto
-                  if hand_label == side and distance < 150 # So e execultado a executor.submit(Check_gesture ... se essa condicao for verdadeira
+                  if hand_label == side and control_functions.ACTION != True# So e execultado a executor.submit(Check_gesture ... se essa condicao for verdadeira
                 }
                 
                 # Processando os resultados
@@ -79,16 +79,22 @@ async def init_control(): # Função par tornar a iniciação sincrona
       
 def Check_gesture(func_exe, func_act, *args): # Faz a verificacao de cada gesto de mão
     if func_act(*args): # Passa a função e os parametos para serem verificados
-      threading.Thread(func_exe, daemon=True).start() # Executa a ação associada em thread
+      result = func_exe()
+      if asyncio.iscoroutine(result):
+            loop = asyncio.get_event_loop()
+            loop.create_task(result)
+        # Se for uma função síncrona, execute-a em uma thread
+      else:
+          pass
 
-def CalculateNormalDistance(h, hand_landmarks): # Calcula a distancia da mao analisada
-  w = 7.87 # 20cm -> 8pl # Largura media de uma mao
-  f = 300.154 # Disfoco da camera 
-  polegar_4_x = int(hand_landmarks.landmark[4].x * h)
-  mindinho_20_x = int(hand_landmarks.landmark[20].x * h)
-  p =  mindinho_20_x - polegar_4_x # Largura relativa
-  D = (w*f)/p # Distancia em polegadas
-  return D*2.54
+# def CalculateNormalDistance(h, hand_landmarks): # Calcula a distancia da mao analisada
+#   w = 7.87 # 20cm -> 8pl # Largura media de uma mao
+#   f = 300.154 # Disfoco da camera 
+#   polegar_4_x = int(hand_landmarks.landmark[4].x * h)
+#   mindinho_20_x = int(hand_landmarks.landmark[20].x * h)
+#   p = math.sqrt(((mindinho_20_x - polegar_4_x)+1)**2)# Largura relativa
+#   D = math.sqrt(((w*f)/p)**2) # Distancia em polegadas
+#   return D*2.54
 
 if __name__ == "__main__": # Verificação de arquivo principal com prioridade de execução
   asyncio.run(main()) # Execultar a função principal de forma assincrona

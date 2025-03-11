@@ -58,17 +58,17 @@ class Control:  # Classe de Controle de funções
         microfone.maxAlternatives = 1  # Numero de palavras para a previsão
         with sr.Microphone() as source:  # Enquanto o microfone estiver aberto
             with ThreadPoolExecutor() as executor:  # Torna as funções sincronas
-                executor.submit(
+                adjust_future = executor.submit(
                     microfone.adjust_for_ambient_noise, source, duration=2
-                )  # Configuração do microfone
+                )
+                adjust_future.result()  # Configuração do microfone
                 try:  # Tratamentos de erros
-                    audio = executor.submit(
+                    audio_future = executor.submit(
                         microfone.listen, source, timeout=5, phrase_time_limit=5
                     )  # Transcrição de voz
+                    audio = audio_future.result()  # Transcrição de voz
                     self.ACTION = False
-                    return "" + microfone.recognize_google(
-                        audio.result(), language="pt-BR"
-                    )  # Retorno do audio
+                    return "" + microfone.recognize_google(audio.result(), language="pt-BR")  # Retorno do audio
                 except sr.UnknownValueError:
                     return "Sem Pergunta"
                 except sr.RequestError:
