@@ -35,25 +35,36 @@ async def main(): # Função de execução principal
                 
                 h, w, _ = frame.shape # Constantes de proporção da camera h = heigth, w = width, _ = canais
 
-                # Verificação do gesto de mão OK
-                if hand_label == "Right" and hands_system.Map_Ok(h, w, hand_landmarks, frame) and control_functions.ACTION == False:
-                  executor.submit(control_functions.Capture_Photo, frame) # Chamada para o controle tirar uma foto
+                checks = [
+                  # Verificação do gesto de mão OK
+                  (lambda: executor.submit(control_functions.Capture_Photo, frame), lambda: hands_system.Map_Ok(h, w, hand_landmarks, frame), "Right"), # Chamada para o controle tirar uma foto
+                  # Verificação do gesto de mão Positivo
+                  (lambda: executor.submit(control_functions.Capture_Video, cap), lambda: hands_system.Map_Positive(h, w, hand_landmarks, frame), "Left"), # Chamada para o controle gravar um video
+                ]
                 
-                # Verificação do gesto de mão Positivo
-                if hand_label == "Left" and hands_system.Map_Positive(h, w, hand_landmarks, frame) and control_functions.ACTION == False:
-                  executor.submit(control_functions.Capture_Video, cap) # Chamada para o controle gravar um video
+                for func_exe, func_act, side in checks:
+                  if control_functions.ACTION != True:
+                    Check_Gesture(func_exe, func_act, side, hand_label)
+                
+                # # Verificação do gesto de mão OK
+                # if hand_label == "Right" and hands_system.Map_Ok(h, w, hand_landmarks, frame) and control_functions.ACTION == False:
+                #   executor.submit(control_functions.Capture_Photo, frame) # Chamada para o controle tirar uma foto
+                
+                # # Verificação do gesto de mão Positivo
+                # if hand_label == "Left" and hands_system.Map_Positive(h, w, hand_landmarks, frame) and control_functions.ACTION == False:
+                #   executor.submit(control_functions.Capture_Video, cap) # Chamada para o controle gravar um video
                   
-                # Verificação do gesto de mão Levantar dedo
-                if hand_label == "Right" and hands_system.Map_Speak(h, w, hand_landmarks, frame) and control_functions.ACTION == False:
-                  await control_functions.Audio_to_Audio() # Chamada para o controle para fazer uma pergunta e agauarda a resposta
+                # # Verificação do gesto de mão Levantar dedo
+                # if hand_label == "Right" and hands_system.Map_Speak(h, w, hand_landmarks, frame) and control_functions.ACTION == False:
+                #   await control_functions.Audio_to_Audio() # Chamada para o controle para fazer uma pergunta e agauarda a resposta
 
-                # Verificação do gesto de mão Faz o L
-                if hand_label == "Left" and hands_system.Map_Squid(h, w, hand_landmarks, frame):
-                  await control_functions.Image_Audio(frame) # Chamada para o controle para fazer uma pergunta, analisar uma imagem e agauardar a resposta
+                # # Verificação do gesto de mão Faz o L
+                # if hand_label == "Left" and hands_system.Map_Squid(h, w, hand_landmarks, frame):
+                #   await control_functions.Image_Audio(frame) # Chamada para o controle para fazer uma pergunta, analisar uma imagem e agauardar a resposta
                   
-                # Verificação do gesto de mão Rock
-                if hand_label == "Right" and hands_system.Map_Rock(h, w, hand_landmarks, frame):
-                  await control_functions.Video_Audio(cap) # Chamada para o controle para fazer uma pergunta, analisar um video e agauardar a resposta
+                # # Verificação do gesto de mão Rock
+                # if hand_label == "Right" and hands_system.Map_Rock(h, w, hand_landmarks, frame):
+                #   await control_functions.Video_Audio(cap) # Chamada para o controle para fazer uma pergunta, analisar um video e agauardar a resposta
                       
                 hands_system.mp_drawing.draw_landmarks(frame, hand_landmarks, hands_system.mp_hands.HAND_CONNECTIONS) # Reenderizar os pontos e retas na tela
             
@@ -75,6 +86,10 @@ async def init_control(): # Função par tornar a iniciação sincrona
     loop = asyncio.get_running_loop() # Aguarda terminar a funçõao
     with ThreadPoolExecutor() as executor:
         return await loop.run_in_executor(executor, control.Control)
+      
+def Check_Gesture(func_exe, func_act, side, hand_label):
+  if func_act() and hand_label == side:
+    func_exe()
 
 if __name__ == "__main__": # Verificação de arquivo principal com prioridade de execução
   asyncio.run(main()) # Execultar a função principal de forma assincrona
