@@ -52,7 +52,7 @@ class Hands:
             # return save_foto(frame)
             return True
   
-  def Map_Positive(self,h, w, hand_landmarks, frame):
+  def Map_Positive(self, h, w, hand_landmarks, frame):
     polegar_1 = hand_landmarks.landmark[1]
     polegar_1_x, polegar_1_y = int(polegar_1.x * w), int(polegar_1.y * h)
     polegar_4 = hand_landmarks.landmark[4]

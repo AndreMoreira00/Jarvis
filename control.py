@@ -5,13 +5,15 @@ import speech_recognition as sr  # Biblioteca para transformar audio em texto
 from concurrent.futures import ThreadPoolExecutor  # Torna as funções sincronas
 import jarvis  # Importação da classe do Jarvis
 import asyncio
+import hands
 
 
 class Control:  # Classe de Controle de funções
     def __init__(self):
         self.ACTION = False  # Variavel de controle de funções (Impossibilita que a função execulte varias vezes)
         self.jarvis_system = jarvis.Jarvis()  # Criação do objeto Jarvis
-
+        self.Control_Video = False
+        
     # Capture Photo
     def Capture_Photo(self, frame):
         self.ACTION = True
@@ -25,28 +27,18 @@ class Control:  # Classe de Controle de funções
     # Capture Video
     def Capture_Video(self, cap):
         self.ACTION = True
-        fourcc = cv2.VideoWriter_fourcc(
-            *"XVID"
-        )  # Inicia uma camera temporaria só para gravar
-        timesr = time.strftime(
-            "%Y%m%d_%H%M%S"
-        )  # Salvamos os arquivos com uma nomenclatura de ano/mes/dia/hora/minito/segundo
-        duration_in_seconds = 15  # Duração do video 15s mas isso preecisa ser ajustado para o usuario escolher
+        fourcc = cv2.VideoWriter_fourcc(*"XVID")  # Inicia uma camera temporaria só para gravar
+        timesr = time.strftime("%Y%m%d_%H%M%S")  # Salvamos os arquivos com uma nomenclatura de ano/mes/dia/hora/minito/segundo
         fps = 30  # Varia com a qualidade da camera mas o padrão é 30fps
-        out = cv2.VideoWriter(
-            f"video/{timesr}.avi", fourcc, fps, (640, 480)
-        )  # Objeto para salvar o video e suas caracteristicas (nome, formato, fps, tamanho da tela)
-        total_frames = (
-            duration_in_seconds * fps
-        )  # Calculo para saber quantos frames são necessarios para gravar 15 segundos
-        frame_count = 0  # Controlador dos frames
-        while frame_count < total_frames:  # Gravação do video
-            status, frame = (
-                cap.read()
-            )  # Captura de cada frame da camera. Ret é um parametro para verificar a captura
-            out.write(frame)  # Salva cada frame no formato de video
-            frame_count += 1
+        out = cv2.VideoWriter(f"video/{timesr}.avi", fourcc, fps, (640, 480))  # Objeto para salvar o video e suas caracteristicas (nome, formato, fps, tamanho da tela)
+        print("gravacao iniciada")
         self.ACTION = False
+        while self.Control_Video:  # Gravação do video
+            status, frame = cap.read()  # Captura de cada frame da camera. Ret é um parametro para verificar a captura
+            out.write(frame)  # Salva cada frame no formato de video
+        
+        print("gravacao finalizada")
+        out.release()
         return f"video/{timesr}.avi"
 
     # Capture Audio
