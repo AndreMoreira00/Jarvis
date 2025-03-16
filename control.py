@@ -27,17 +27,19 @@ class Control:  # Classe de Controle de funções
     # Capture Video
     def Capture_Video(self, cap):
         self.ACTION = True
-        fourcc = cv2.VideoWriter_fourcc(*"XVID")  # Inicia uma camera temporaria só para gravar
-        timesr = time.strftime("%Y%m%d_%H%M%S")  # Salvamos os arquivos com uma nomenclatura de ano/mes/dia/hora/minito/segundo
-        fps = 30  # Varia com a qualidade da camera mas o padrão é 30fps
-        out = cv2.VideoWriter(f"video/{timesr}.avi", fourcc, fps, (640, 480))  # Objeto para salvar o video e suas caracteristicas (nome, formato, fps, tamanho da tela)
-        print("gravacao iniciada")
+        # self.Control_Video = not self.Control_Video
+        if self.Control_Video:
+            fourcc = cv2.VideoWriter_fourcc(*"XVID")  # Inicia uma camera temporaria só para gravar
+            timesr = time.strftime("%Y%m%d_%H%M%S")  # Salvamos os arquivos com uma nomenclatura de ano/mes/dia/hora/minito/segundo
+            fps = 30  # Varia com a qualidade da camera mas o padrão é 30fps
+            out = cv2.VideoWriter(f"video/{timesr}.avi", fourcc, fps, (640, 480))  # Objeto para salvar o video e suas caracteristicas (nome, formato, fps, tamanho da tela)
+            # print("gravacao iniciada")
         self.ACTION = False
         while self.Control_Video:  # Gravação do video
             status, frame = cap.read()  # Captura de cada frame da camera. Ret é um parametro para verificar a captura
             out.write(frame)  # Salva cada frame no formato de video
-        
-        print("gravacao finalizada")
+        # if not self.Control_Video:
+        #     print("gravacao finalizada")
         out.release()
         return f"video/{timesr}.avi"
 
