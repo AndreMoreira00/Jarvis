@@ -59,11 +59,33 @@ class Jarvis: # Classe do Jarvis
     async def Text_To_Text(self, prompt) -> None:
       response = self.model.generate_content(prompt) # Salva a resposta da Gemini
       await self.Translate(response.text) # Aguarda a função de Translate
+      SOUND = mixer.Sound(self.PATH_FILE) 
+      SOUND.play() # Execulta a resposta
+      await asyncio.sleep(SOUND.get_length())
+      SOUND.stop()
+      
+    # Response Image to Text
+    async def Image_To_Text(self, image_path, prompt) -> None:
+      response = self.model.generate_content([{'mime_type':'image/jpeg', 'data': pathlib.Path(f'{image_path}').read_bytes()}, prompt]) # Salva a resposta da Gemini
+      await self.Translate(response.text) # Aguarda a função de Translate
       SOUND = mixer.Sound(self.PATH_FILE)
       SOUND.play() # Execulta a resposta
-      t = 0
-      while t <= SOUND.get_length():
-        time.sleep(1)
-        t+=1
+      await asyncio.sleep(SOUND.get_length())
+      SOUND.stop()
+    
+    # Response Video to text 
+    async def Video_To_Text(self, video_path, prompt) -> None:
+      video_file = genai.upload_file(path=video_path) # Sobe o video na memoria da Gemini
+      while video_file.state.name == "PROCESSING":
+        print('.', end='')
+        time.sleep(10)
+        video_file = genai.get_file(video_file.name)
+      if video_file.state.name == "FAILED":
+        raise ValueError(video_file.state.name)
+      response = self.model.generate_content([video_file, prompt], request_options={"timeout": 600}) # Salva a resposta da Gemini
+      await self.Translate(response.text) # Aguarda a função de Translate
+      SOUND = mixer.Sound(self.PATH_FILE)
+      SOUND.play() # Execulta a resposta
+      await asyncio.sleep(SOUND.get_length())
       SOUND.stop()
       self.Delete_Cahche_Files()
