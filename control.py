@@ -43,7 +43,7 @@ class Control:  # Classe de Controle de funções
         return f"video/{timesr}.avi"
 
     # Capture Audio
-    def Capture_Audio(self):
+    def Capture_Audio(self, executor):
         self.ACTION = True
         microfone = sr.Recognizer()  # Instancia de camera
         microfone.pause_threshold = 0.8  # Pausa para fechar o mic
@@ -51,30 +51,31 @@ class Control:  # Classe de Controle de funções
         microfone.energy_threshold = 300  # Hrz do microfine
         microfone.maxAlternatives = 1  # Numero de palavras para a previsão
         with sr.Microphone() as source:  # Enquanto o microfone estiver aberto
-            with ThreadPoolExecutor() as executor:  # Execulta as funções sincronas
-                executor.submit(
-                    microfone.adjust_for_ambient_noise, source, duration=2
-                )  # Configuração do microfone
-                try:  # Tratamentos de erros
-                    audio = executor.submit(
-                        microfone.listen, source, timeout=5, phrase_time_limit=5
-                    )  # Transcrição de voz
-                    self.ACTION = False
-                    return "" + microfone.recognize_google(
-                        audio.result(), language="pt-BR"
-                    )  # Retorno do audio
-                except sr.UnknownValueError:
-                    return "Sem Pergunta"
-                except sr.RequestError:
-                    return "Erro de conexão"
-                except Exception as e:
-                    return f"Erro inesperado: {str(e)}"
+            # with ThreadPoolExecutor() as executor:  # Execulta as funções sincronas
+            executor.submit(
+                microfone.adjust_for_ambient_noise, source, duration=2
+            )  # Configuração do microfone
+            print("Audio")
+            try:  # Tratamentos de erros
+                audio = executor.submit(
+                    microfone.listen, source, timeout=5, phrase_time_limit=5
+                )  # Transcrição de voz
+                self.ACTION = False
+                return "" + microfone.recognize_google(
+                    audio.result(), language="pt-BR"
+                )  # Retorno do audio
+            except sr.UnknownValueError:
+                return "Sem Pergunta"
+            except sr.RequestError:
+                return "Erro de conexão"
+            except Exception as e:
+                return f"Erro inesperado: {str(e)}"
 
     # Functions control Jarvis
 
     ## Audio to Audio
-    async def Audio_to_Audio(self) -> None:
-        prompt = self.Capture_Audio()  # Captura o audio
+    async def Audio_to_Audio(self, executor) -> None:
+        prompt = self.Capture_Audio(executor)  # Captura o audio
         await asyncio.create_task(self.jarvis_system.Text_To_Text(prompt))  # Envia uma pergunta de texto ao Jarvis
 
     ## Image Audio
