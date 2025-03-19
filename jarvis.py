@@ -61,6 +61,7 @@ class Jarvis: # Classe do Jarvis
       await self.Translate(response.text) # Aguarda a função de Translate
       SOUND = mixer.Sound(self.PATH_FILE) 
       SOUND.play() # Execulta a resposta
+      # await asyncio.sleep(SOUND.get_length()) # Alternativa!
       t = 0
       while t <= SOUND.get_length():
         time.sleep(1)
@@ -73,6 +74,7 @@ class Jarvis: # Classe do Jarvis
       await self.Translate(response.text) # Aguarda a função de Translate
       SOUND = mixer.Sound(self.PATH_FILE)
       SOUND.play() # Execulta a resposta
+      # await asyncio.sleep(SOUND.get_length()) # Alternativa!
       t = 0
       while t <= SOUND.get_length():
         time.sleep(1)
@@ -84,7 +86,7 @@ class Jarvis: # Classe do Jarvis
       video_file = genai.upload_file(path=video_path) # Sobe o video na memoria da Gemini
       while video_file.state.name == "PROCESSING":
         print('.', end='')
-        time.sleep(10)
+        time.sleep(10) # Bomba, precisa ser limpo o processamento de carregar um video de tmanho variave.
         video_file = genai.get_file(video_file.name)
       if video_file.state.name == "FAILED":
         raise ValueError(video_file.state.name)
@@ -97,4 +99,5 @@ class Jarvis: # Classe do Jarvis
         time.sleep(1)
         t+=1
       SOUND.stop()
+      # await asyncio.sleep(SOUND.get_length()) # Alternativa!
       self.Delete_Cahche_Files()

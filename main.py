@@ -4,6 +4,7 @@ import cv2 # Biblioteca que da acessoa câmera
 import time # Biblioteca de tempo para controle de algumas funções
 import asyncio  # Torna as funções assincronas
 from concurrent.futures import ThreadPoolExecutor # Torna as funções sincronas
+import math
 
 gesture_cooldown = 0
 
@@ -53,10 +54,10 @@ async def main(): # Função de execução principal
                   (lambda: control_functions.Video_Audio(cap), lambda: hands_system.Map_Rock(h, w, hand_landmarks, frame), "Right", "Sync", 20), # Chamada para o controle para fazer uma pergunta, analisar um video e agauardar a resposta
                 ]
                 
-                Dx, Dy = calculoDistanciaNormal(h, w, hand_landmarks)
+                # Dx, Dy = calculusNormalDistance(h, w, hand_landmarks)
                 
-                for func_exe, func_act, side, state, cooldown in checks:
-                  if control_functions.ACTION != True and gesture_cooldown == 0 and (Dx < 150 or Dy < 150):
+                for func_exe, func_act, side, state, cooldown in checks: 
+                  if control_functions.ACTION != True and gesture_cooldown == 0: # and (Dx < 150 or Dy < 150)
                     await Check_Gesture(func_exe, func_act, side, hand_label, state, cooldown, control_functions)
                 
                 # Reduz o cooldown a cada frame
@@ -94,18 +95,22 @@ async def Check_Gesture(func_exe, func_act, side, hand_label, state, cooldown, c
     else:
       await func_exe()
 
-def calculoDistanciaNormal(X, Y, hand_landmarks):
-  w = 7.87 # 20cm -> 8pl
-  f = 300.154 # Disfoco da camera
-  indicador_5_x = int(hand_landmarks.landmark[5].x * X)
-  mindinho_17_x = int(hand_landmarks.landmark[17].x * X)
-  indicador_5_y = int(hand_landmarks.landmark[5].y * Y)
-  mindinho_17_y = int(hand_landmarks.landmark[17].y * Y)
-  px = mindinho_17_x - indicador_5_x # Largura relativa
-  py = mindinho_17_y - indicador_5_y
-  Dx = (w*f)/(px*2)
-  Dy = (w*f)/(py)
-  return [Dx*2.54, Dy*2.54]
+# def calculusNormalDistance(X, Y, hand_landmarks):
+#   w = 7.87 # 20cm -> 8pl
+#   f = 300.154 # Disfoco da camera
+#   indicador_5_x = int(hand_landmarks.landmark[5].x * X)
+#   mindinho_17_x = int(hand_landmarks.landmark[17].x * X)
+#   indicador_5_y = int(hand_landmarks.landmark[5].y * Y)
+#   mindinho_17_y = int(hand_landmarks.landmark[17].y * Y)
+#   px = mindinho_17_x - indicador_5_x # Largura relativa
+#   py = mindinho_17_y - indicador_5_y # Largura relativa
+#   if px != 0 and py != 0:
+#     Dx = math.sqrt(((w*f)/(px*2))**2)
+#     Dy = math.sqrt(((w*f)/(py+1))**2)
+#   else:
+#     Dx = 150
+#     Dy = 150
+#   return [Dx*2.54, Dy*2.54]
 
 if __name__ == "__main__": # Verificação de arquivo principal com prioridade de execução
   asyncio.run(main()) # Execultar a função principal de forma assincrona
