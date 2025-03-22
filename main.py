@@ -18,7 +18,7 @@ async def main(): # Função de execução principal
   hands_system, control_functions = await asyncio.gather(hands_task, control_task) # Criação do objeto Hands e Control
   
   # Preferencia de camera
-  cap = cv2.VideoCapture(0)
+  cap = cv2.VideoCapture(1)
   
   with ThreadPoolExecutor() as executor: # Torna as funções sincronas
     
