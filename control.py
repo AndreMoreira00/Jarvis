@@ -75,7 +75,8 @@ class Control:  # Classe de Controle de funções
 
     ## Audio to Audio
     async def Audio_to_Audio(self, executor) -> None:
-        prompt = self.Capture_Audio(executor)  # Captura o audio
+        future_audio = executor.submit(self.Capture_Audio, executor)  # Captura o audio
+        prompt = future_audio.result()
         await asyncio.create_task(self.jarvis_system.Text_To_Text(prompt))  # Envia uma pergunta de texto ao Jarvis
 
     ## Image Audio
