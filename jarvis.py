@@ -61,11 +61,7 @@ class Jarvis: # Classe do Jarvis
       await self.Translate(response.text) # Aguarda a função de Translate
       SOUND = mixer.Sound(self.PATH_FILE) 
       SOUND.play() # Execulta a resposta
-      # await asyncio.sleep(SOUND.get_length()) # Alternativa!
-      t = 0
-      while t <= SOUND.get_length():
-        time.sleep(1)
-        t+=1
+      await asyncio.sleep(SOUND.get_length())
       SOUND.stop()
       
     # Response Image to Text
@@ -74,11 +70,7 @@ class Jarvis: # Classe do Jarvis
       await self.Translate(response.text) # Aguarda a função de Translate
       SOUND = mixer.Sound(self.PATH_FILE)
       SOUND.play() # Execulta a resposta
-      # await asyncio.sleep(SOUND.get_length()) # Alternativa!
-      t = 0
-      while t <= SOUND.get_length():
-        time.sleep(1)
-        t+=1
+      await asyncio.sleep(SOUND.get_length())
       SOUND.stop()
     
     # Response Video to text 
@@ -94,10 +86,6 @@ class Jarvis: # Classe do Jarvis
       await self.Translate(response.text) # Aguarda a função de Translate
       SOUND = mixer.Sound(self.PATH_FILE)
       SOUND.play() # Execulta a resposta
-      t = 0
-      while t <= SOUND.get_length():
-        time.sleep(1)
-        t+=1
+      await asyncio.sleep(SOUND.get_length()) 
       SOUND.stop()
-      # await asyncio.sleep(SOUND.get_length()) # Alternativa!
       self.Delete_Cahche_Files()
