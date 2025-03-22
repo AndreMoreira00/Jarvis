@@ -49,7 +49,7 @@ async def main(): # Função de execução principal
                   # Verificação do gesto de mão Levantar dedo
                   (lambda: executor.submit(control_functions.Audio_to_Audio, executor), lambda: hands_system.Map_Speak(h, w, hand_landmarks, frame), "Right", "Async", 20), # Chamada para o controle para fazer uma pergunta e agauarda a resposta
                   # Verificação do gesto de mão Faz o L
-                  (lambda: control_functions.Image_Audio(frame), lambda: hands_system.Map_Squid(h, w, hand_landmarks, frame), "Left", "Sync", 20), # Chamada para o controle para fazer uma pergunta, analisar uma imagem e agauardar a resposta
+                  (lambda: executor.submit(control_functions.Image_Audio, frame, executor), lambda: hands_system.Map_Squid(h, w, hand_landmarks, frame), "Left", "Async", 20), # Chamada para o controle para fazer uma pergunta, analisar uma imagem e agauardar a resposta
                   # Verificação do gesto de mão Rock
                   (lambda: control_functions.Video_Audio(cap), lambda: hands_system.Map_Rock(h, w, hand_landmarks, frame), "Right", "Sync", 20), # Chamada para o controle para fazer uma pergunta, analisar um video e agauardar a resposta
                 ]

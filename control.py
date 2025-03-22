@@ -81,15 +81,13 @@ class Control:  # Classe de Controle de funções
         # print(prompt) # Testar esse jeito
 
     ## Image Audio
-    async def Image_Audio(self, frame) -> None:
-        with ThreadPoolExecutor() as executor:  # Torna as funções sincronas
-            future_foto = executor.submit(self.Capture_Photo, frame)  # Captura uma foto
-            future_audio = executor.submit(self.Capture_Audio)  # Captura o audio
-            image_path = future_foto.result()  # Pega o caminho da imagem
-            prompt = (
-                future_audio.result()
-            )  # Pega a transcrição do audio e passa como prompt
-        await asyncio.create_task(self.jarvis_system.Image_To_Text(image_path, prompt))  # Envia uma pergunta de texto e imagem ao Jarvis
+    def Image_Audio(self, frame, executor) -> None:
+    # with ThreadPoolExecutor() as executor:  # Torna as funções sincronas
+        future_foto = executor.submit(self.Capture_Photo, frame)  # Captura uma foto
+        future_audio = executor.submit(self.Capture_Audio, executor)  # Captura o audio
+        image_path = future_foto.result()  # Pega o caminho da imagem
+        prompt = future_audio.result() # Pega a transcrição do audio e passa como prompt
+        asyncio.run(self.jarvis_system.Image_To_Text(image_path, prompt))  # Envia uma pergunta de texto e imagem ao Jarvis
 
     ## Video Audio
     async def Video_Audio(self, cap) -> None:
