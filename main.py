@@ -8,7 +8,7 @@ import math
 
 gesture_cooldown = 0
 
-async def main(): # Função de execução principal 
+async def main(): # Função de execução principal
   
   global gesture_cooldown
   
@@ -18,7 +18,7 @@ async def main(): # Função de execução principal
   hands_system, control_functions = await asyncio.gather(hands_task, control_task) # Criação do objeto Hands e Control
   
   # Preferencia de camera
-  cap = cv2.VideoCapture(1)
+  cap = cv2.VideoCapture(0)
   
   with ThreadPoolExecutor() as executor: # Torna as funções sincronas
     
@@ -51,7 +51,7 @@ async def main(): # Função de execução principal
                   # Verificação do gesto de mão Faz o L
                   (lambda: executor.submit(control_functions.Image_Audio, frame, executor), lambda: hands_system.Map_Squid(h, w, hand_landmarks, frame), "Left", "Async", 20), # Chamada para o controle para fazer uma pergunta, analisar uma imagem e agauardar a resposta
                   # Verificação do gesto de mão Rock
-                  (lambda: control_functions.Video_Audio(cap), lambda: hands_system.Map_Rock(h, w, hand_landmarks, frame), "Right", "Sync", 20), # Chamada para o controle para fazer uma pergunta, analisar um video e agauardar a resposta
+                  (lambda: executor.submit(control_functions.Video_Audio, cap, executor), lambda: hands_system.Map_Rock(h, w, hand_landmarks, frame), "Right", "Async", 20), # Chamada para o controle para fazer uma pergunta, analisar um video e agauardar a resposta
                 ]
                 
                 # Dx, Dy = calculusNormalDistance(h, w, hand_landmarks)
