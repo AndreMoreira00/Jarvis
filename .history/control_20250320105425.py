@@ -22,9 +22,10 @@ class Control:  # Classe de Controle de funções
         pygame.mixer.init()
 
     # Função para reproduzir sons de confirmação
-    def play_confirmation_sound(self, sound_file):
+    def play_confirmation_sound(self, sound_file, volume ):
         try:
             sound = pygame.mixer.Sound(sound_file)
+            sound.set_volume(volume)
             sound.play()
             # Pequena pausa para garantir que o som seja reproduzido
             pygame.time.wait(int(sound.get_length() * 1000))

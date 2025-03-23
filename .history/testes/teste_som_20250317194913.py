@@ -51,11 +51,12 @@ class Control:  # Classe de Controle de funções
         # Som pro Vídeo (Ínicio)
         self.play_confirmation_sound(self.video_start_sound)
         # self.Control_Video = not self.Control_Video
-        fourcc = cv2.VideoWriter_fourcc(*"XVID")  # Inicia uma camera temporaria só para gravar
-        timesr = time.strftime("%Y%m%d_%H%M%S")  # Salvamos os arquivos com uma nomenclatura de ano/mes/dia/hora/minito/segundo
-        fps = 30  # Varia com a qualidade da camera mas o padrão é 30fps
-        out = cv2.VideoWriter(f"video/{timesr}.avi", fourcc, fps, (640, 480))  # Objeto para salvar o video e suas caracteristicas (nome, formato, fps, tamanho da tela)
-        # print("gravacao iniciada")
+        if self.Control_Video:
+            fourcc = cv2.VideoWriter_fourcc(*"XVID")  # Inicia uma camera temporaria só para gravar
+            timesr = time.strftime("%Y%m%d_%H%M%S")  # Salvamos os arquivos com uma nomenclatura de ano/mes/dia/hora/minito/segundo
+            fps = 30  # Varia com a qualidade da camera mas o padrão é 30fps
+            out = cv2.VideoWriter(f"video/{timesr}.avi", fourcc, fps, (640, 480))  # Objeto para salvar o video e suas caracteristicas (nome, formato, fps, tamanho da tela)
+            # print("gravacao iniciada")
         self.ACTION = False
         while self.Control_Video:  # Gravação do video
             status, frame = cap.read()  # Captura de cada frame da camera. Ret é um parametro para verificar a captura

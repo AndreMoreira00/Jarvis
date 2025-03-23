@@ -6,7 +6,7 @@ from concurrent.futures import ThreadPoolExecutor  # Torna as funções sincrona
 import jarvis  # Importação da classe do Jarvis
 import asyncio
 import hands
-import pygame # Biblioteca (nesse caso) usada para som
+from playsound import playsound # Biblioteca usada para som(preferi usar ela do que o pygame)
 
 
 class Control:  # Classe de Controle de funções
@@ -14,30 +14,14 @@ class Control:  # Classe de Controle de funções
         self.ACTION = False  # Variavel de controle de funções (Impossibilita que a função execulte varias vezes)
         self.jarvis_system = jarvis.Jarvis()  # Criação do objeto Jarvis
         self.Control_Video = False
-        # Caminhos para as funções de Captura de Áudio e Vídeo
-        self.audio_start_sound = "audios_check/audio_starter.wav"  # Som para início de captura de áudio
-        self.photo_take_sound = "audios_check/photo_take.wav" # Som para tirar fotos
-        self.video_start_sound = "audios_check/video_starter.wav"  # Som para início de gravação de vídeo
-        self.video_end_sound = "audios_check/video_out.wav"  # Som para término de gravação de vídeo
-        pygame.mixer.init()
-
-    # Função para reproduzir sons de confirmação
-    def play_confirmation_sound(self, sound_file):
-        try:
-            sound = pygame.mixer.Sound(sound_file)
-            sound.play()
-            # Pequena pausa para garantir que o som seja reproduzido
-            pygame.time.wait(int(sound.get_length() * 1000))
-        except Exception as e:
-            print(f"Erro ao reproduzir som: {str(e)}")
-
-    
+        # Caminhos para as funções de Captura de 
+        self.audio_start_sound = "sounds/audio_start.wav"  # Som para início de captura de áudio
+        self.video_start_sound = "sounds/video_start.wav"  # Som para início de gravação de vídeo
+        self.video_end_sound = "sounds/video_end.wav"  # Som para término de gravação de vídeo
         
     # Capture Photo
     def Capture_Photo(self, frame):
         self.ACTION = True
-        # Som pra foto
-        self.play_confirmation_sound(self.photo_take_sound)
         timesr = time.strftime(
             "%Y%m%d_%H%M%S"
         )  # Salvamos os arquivos com uma nomenclatura de ano/mes/dia/hora/minito/segundo
@@ -48,20 +32,17 @@ class Control:  # Classe de Controle de funções
     # Capture Video
     def Capture_Video(self, cap): #entrada e saida
         self.ACTION = True
-        # Som pro Vídeo (Ínicio)
-        self.play_confirmation_sound(self.video_start_sound)
         # self.Control_Video = not self.Control_Video
-        fourcc = cv2.VideoWriter_fourcc(*"XVID")  # Inicia uma camera temporaria só para gravar
-        timesr = time.strftime("%Y%m%d_%H%M%S")  # Salvamos os arquivos com uma nomenclatura de ano/mes/dia/hora/minito/segundo
-        fps = 30  # Varia com a qualidade da camera mas o padrão é 30fps
-        out = cv2.VideoWriter(f"video/{timesr}.avi", fourcc, fps, (640, 480))  # Objeto para salvar o video e suas caracteristicas (nome, formato, fps, tamanho da tela)
-        # print("gravacao iniciada")
+        if self.Control_Video:
+            fourcc = cv2.VideoWriter_fourcc(*"XVID")  # Inicia uma camera temporaria só para gravar
+            timesr = time.strftime("%Y%m%d_%H%M%S")  # Salvamos os arquivos com uma nomenclatura de ano/mes/dia/hora/minito/segundo
+            fps = 30  # Varia com a qualidade da camera mas o padrão é 30fps
+            out = cv2.VideoWriter(f"video/{timesr}.avi", fourcc, fps, (640, 480))  # Objeto para salvar o video e suas caracteristicas (nome, formato, fps, tamanho da tela)
+            # print("gravacao iniciada")
         self.ACTION = False
         while self.Control_Video:  # Gravação do video
             status, frame = cap.read()  # Captura de cada frame da camera. Ret é um parametro para verificar a captura
             out.write(frame)  # Salva cada frame no formato de video
-        # Som pro Vídeo (Saída)
-        self.play_confirmation_sound(self.video_end_sound)
         # if not self.Control_Video:
         #     print("gravacao finalizada")
         out.release()
@@ -70,8 +51,6 @@ class Control:  # Classe de Controle de funções
     # Capture Audio
     def Capture_Audio(self):
         self.ACTION = True
-        # Som pro Audio
-        self.play_confirmation_sound(self.video_start_sound)
         microfone = sr.Recognizer()  # Instancia de camera
         microfone.pause_threshold = 0.8  # Pausa para fechar o mic
         microfone.dynamic_energy_threshold = False  # Supressor de ruido
@@ -125,7 +104,3 @@ class Control:  # Classe de Controle de funções
                 future_audio.result()
             )  # Pega a transcrição do audio e passa como prompt
             await asyncio.create_task(self.jarvis_system.Video_To_Text(video_path, prompt))  # Envia uma pergunta de texto e video ao Jarvis
-
-# Função para limpar os recursos do pygame       
-    def cleanup(self):
-        pygame.mixer.quit()

@@ -94,18 +94,18 @@ async def Check_Gesture(func_exe, func_act, side, hand_label, state, cooldown, c
     else:
       await func_exe()
 
-def calculoDistanciaNormal(X, Y, hand_landmarks):
-  w = 7.87 # 20cm -> 8pl
-  f = 300.154 # Disfoco da camera
-  indicador_5_x = int(hand_landmarks.landmark[5].x * X)
-  mindinho_17_x = int(hand_landmarks.landmark[17].x * X)
-  indicador_5_y = int(hand_landmarks.landmark[5].y * Y)
-  mindinho_17_y = int(hand_landmarks.landmark[17].y * Y)
-  px = mindinho_17_x - indicador_5_x # Largura relativa
-  py = mindinho_17_y - indicador_5_y
-  Dx = (w*f)/(px*2)
-  Dy = (w*f)/(py)
-  return [Dx*2.54, Dy*2.54]
+# def calculoDistanciaNormal(X, Y, hand_landmarks):
+#   w = 7.87 # 20cm -> 8pl
+#   f = 300.154 # Disfoco da camera
+#   indicador_5_x = int(hand_landmarks.landmark[5].x * X)
+#   mindinho_17_x = int(hand_landmarks.landmark[17].x * X)
+#   indicador_5_y = int(hand_landmarks.landmark[5].y * Y)
+#   mindinho_17_y = int(hand_landmarks.landmark[17].y * Y)
+#   px = mindinho_17_x - indicador_5_x # Largura relativa
+#   py = mindinho_17_y - indicador_5_y
+#   Dx = (w*f)/(px*2)
+#   Dy = (w*f)/(py)
+#   return [Dx*2.54, Dy*2.54]
 
 if __name__ == "__main__": # Verificação de arquivo principal com prioridade de execução
   asyncio.run(main()) # Execultar a função principal de forma assincrona
