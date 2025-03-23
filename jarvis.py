@@ -5,13 +5,14 @@ import google.generativeai as genai # API da Gemini
 import google # Biblioteca de serviços da google
 import pathlib # Biblioteca que transforma os dados de imagem para serem enviados para o Gemini 
 import edge_tts # Biblioteca para tranformar a resposta do Gemini na voz do Jarvis
-from pygame import mixer # Biblioteca que execulta a voz do Jarvis
+# from pygame import mixer # Biblioteca que execulta a voz do Jarvis
 import time # Biblioteca de tempo para controle de algumas funções
 
-mixer.init() # Iniciando o serviço de audio do pygame
+# mixer.init() # Iniciando o serviço de audio do pygame
 
 class Jarvis: # Classe do Jarvis
-    def __init__(self): # Função que inicia as "caracteristicas" do Jarvis
+    def __init__(self, mixer): # Função que inicia as "caracteristicas" do Jarvis
+      self.mixer = mixer
       load_dotenv() # Carrega a variavel de ambiente (Key de acesso a API Gemini)
       self.API_KEY = os.getenv("API_GEMINI")
       # Criação do Template que da a personalidade do Jarvis
@@ -59,7 +60,7 @@ class Jarvis: # Classe do Jarvis
     async def Text_To_Text(self, prompt) -> None:
       response = self.model.generate_content(prompt) # Salva a resposta da Gemini
       await self.Translate(response.text) # Aguarda a função de Translate
-      SOUND = mixer.Sound(self.PATH_FILE) 
+      SOUND = self.mixer.Sound(self.PATH_FILE) 
       SOUND.play() # Execulta a resposta
       await asyncio.sleep(SOUND.get_length())
       SOUND.stop()
@@ -68,7 +69,7 @@ class Jarvis: # Classe do Jarvis
     async def Image_To_Text(self, image_path, prompt) -> None:
       response = self.model.generate_content([{'mime_type':'image/jpeg', 'data': pathlib.Path(f'{image_path}').read_bytes()}, prompt]) # Salva a resposta da Gemini
       await self.Translate(response.text) # Aguarda a função de Translate
-      SOUND = mixer.Sound(self.PATH_FILE)
+      SOUND = self.mixer.Sound(self.PATH_FILE)
       SOUND.play() # Execulta a resposta
       await asyncio.sleep(SOUND.get_length())
       SOUND.stop()
@@ -84,7 +85,7 @@ class Jarvis: # Classe do Jarvis
         raise ValueError(video_file.state.name)
       response = self.model.generate_content([video_file, prompt], request_options={"timeout": 600}) # Salva a resposta da Gemini
       await self.Translate(response.text) # Aguarda a função de Translate
-      SOUND = mixer.Sound(self.PATH_FILE)
+      SOUND = self.mixer.Sound(self.PATH_FILE)
       SOUND.play() # Execulta a resposta
       await asyncio.sleep(SOUND.get_length()) 
       SOUND.stop()
