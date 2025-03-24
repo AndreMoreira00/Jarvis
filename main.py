@@ -1,7 +1,6 @@
 import hands # Importação da classe do Hands
 import control # Importação da classe do Control
 import cv2 # Biblioteca que da acessoa câmera
-import time # Biblioteca de tempo para controle de algumas funções
 import asyncio  # Torna as funções assincronas
 from concurrent.futures import ThreadPoolExecutor # Torna as funções sincronas
 import math

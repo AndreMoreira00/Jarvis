@@ -1,14 +1,12 @@
 import os # Acessa o sistema operacinal
 import asyncio # Torna as funções assincronas
-from dotenv import load_dotenv, find_dotenv # Carrega a variavel de ambiente que da acesso a API da Gemini
+from dotenv import load_dotenv # Carrega a variavel de ambiente que da acesso a API da Gemini
 import google.generativeai as genai # API da Gemini
 import google # Biblioteca de serviços da google
 import pathlib # Biblioteca que transforma os dados de imagem para serem enviados para o Gemini 
 import edge_tts # Biblioteca para tranformar a resposta do Gemini na voz do Jarvis
-# from pygame import mixer # Biblioteca que execulta a voz do Jarvis
 import time # Biblioteca de tempo para controle de algumas funções
 
-# mixer.init() # Iniciando o serviço de audio do pygame
 
 class Jarvis: # Classe do Jarvis
     def __init__(self, mixer): # Função que inicia as "caracteristicas" do Jarvis

@@ -1,11 +1,9 @@
 import time  # Biblioteca de tempo para controle de algumas funções
 import cv2  # Biblioteca que da acessoa câmera
-import wave  # Biblioteca para salvar o video gravado
 import speech_recognition as sr  # Biblioteca para transformar audio em texto
 from concurrent.futures import ThreadPoolExecutor  # Torna as funções sincronas 
 import jarvis  # Importação da classe do Jarvis
 import asyncio
-import hands
 from pygame import mixer
 
 mixer.init() # Iniciando o serviço de audio do pygame
@@ -97,8 +95,10 @@ class Control:  # Classe de Controle de funções
     def Audio_to_Audio(self, executor) -> None:
         future_audio = executor.submit(self.Capture_Audio, executor)  # Captura o audio
         prompt = future_audio.result()
+        self.ACTION = True
         asyncio.run(self.jarvis_system.Text_To_Text(prompt))  # Envia uma pergunta de texto ao Jarvis
         # print(prompt) # Testar esse jeito
+        self.ACTION = False
 
     ## Image Audio
     def Image_Audio(self, frame, executor) -> None:
@@ -107,7 +107,9 @@ class Control:  # Classe de Controle de funções
         future_audio = executor.submit(self.Capture_Audio, executor)  # Captura o audio
         image_path = future_foto.result()  # Pega o caminho da imagem
         prompt = future_audio.result() # Pega a transcrição do audio e passa como prompt
+        self.ACTION = True
         asyncio.run(self.jarvis_system.Image_To_Text(image_path, prompt))  # Envia uma pergunta de texto e imagem ao Jarvis
+        self.ACTION = False
 
     ## Video Audio
     async def Video_Audio(self, cap, executor) -> None:
@@ -116,9 +118,6 @@ class Control:  # Classe de Controle de funções
         future_audio = executor.submit(self.Capture_Audio)  # Captura o audio # Trava o programa. Conflito com Thread # Await aqui! 
         video_path = future_video.result()  # Pega o caminho do video
         prompt = future_audio.result() # Pega a transcrição do audio e passa como prompt
+        self.ACTION = True
         asyncio.run(self.jarvis_system.Video_To_Text(video_path, prompt)) # Envia uma pergunta de texto e video ao Jarvis # Precisa aguardar os thread terminarem
-            
-            
-# Cap_Audio e Cap_Video estão em concorrência com a main!
-# Ajustar threadd de audio # Retirar thread do audio e implmentar a execução dele direto no main para ver se funciona (Provavelmente tira o conflito com a main!)
-# 
+        self.ACTION = False

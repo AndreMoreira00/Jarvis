@@ -1,8 +1,6 @@
 import mediapipe as mp
 from mediapipe.tasks import python
-from mediapipe.tasks.python import vision
 import math
-import cv2
 
 class Hands:
   def __init__(self):
