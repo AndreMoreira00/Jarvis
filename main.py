@@ -56,7 +56,7 @@ async def main(): # Função de execução principal
                 # Dx, Dy = calculusNormalDistance(h, w, hand_landmarks)
                 
                 for func_exe, func_act, side, state, cooldown in checks: 
-                  if control_functions.ACTION != True and gesture_cooldown == 0: # and (Dx < 150 or Dy < 150)
+                  if control_functions.ACTION == False and gesture_cooldown == 0: # and (Dx < 150 or Dy < 150)
                     await Check_Gesture(func_exe, func_act, side, hand_label, state, cooldown, control_functions)
                 
                 # Reduz o cooldown a cada frame
@@ -69,6 +69,7 @@ async def main(): # Função de execução principal
         
         if cv2.waitKey(1) & 0xFF == ord('q'): # Encerra o programa clicando Q
           break
+          
         
     cap.release() # Fecha a camera
     cv2.destroyAllWindows() # Destroi a tela da camera
@@ -91,8 +92,6 @@ async def Check_Gesture(func_exe, func_act, side, hand_label, state, cooldown, c
     if state == "Async":
       control_functions.Control_Video = not control_functions.Control_Video
       func_exe()
-    else:
-      await func_exe()
 
 # def calculusNormalDistance(X, Y, hand_landmarks):
 #   w = 7.87 # 20cm -> 8pl

@@ -27,25 +27,25 @@ class Control:  # Classe de Controle de funções
     
     # Capture Photo
     def Capture_Photo(self, frame):
-        self.ACTION = True
+        # self.ACTION = True
         timesr = time.strftime(
             "%Y%m%d_%H%M%S"
         )  # Salvamos os arquivos com uma nomenclatura de ano/mes/dia/hora/minito/segundo
         cv2.imwrite(f"image/{timesr}.jpg", frame)  # Salva a imagem
         asyncio.run(self.play_confirmation_sound(self.photo_take_sound))
-        self.ACTION = False
+        # self.ACTION = False
         return f"image/{timesr}.jpg"
 
     # Capture Video
     def Capture_Video(self, cap):
-        self.ACTION = True
+        # self.ACTION = True
         # self.Control_Video = not self.Control_Video
         fourcc = cv2.VideoWriter_fourcc(*"XVID")  # Inicia uma camera temporaria só para gravar
         timesr = time.strftime("%Y%m%d_%H%M%S")  # Salvamos os arquivos com uma nomenclatura de ano/mes/dia/hora/minito/segundo
         fps = 30  # Varia com a qualidade da camera mas o padrão é 30fps
         out = cv2.VideoWriter(f"video/{timesr}.avi", fourcc, fps, (640, 480))  # Objeto para salvar o video e suas caracteristicas (nome, formato, fps, tamanho da tela)
         # print("gravacao iniciada")
-        self.ACTION = False
+        # self.ACTION = False
         # print("Gravando")
         asyncio.run(self.play_confirmation_sound(self.video_start_sound))
         while self.Control_Video:  # Gravação do video
@@ -77,8 +77,7 @@ class Control:  # Classe de Controle de funções
                 audio = executor.submit(
                     microfone.listen, source, timeout=5, phrase_time_limit=5
                 )  # Transcrição de voz
-                self.ACTION = False
-                asyncio.run(self.play_confirmation_sound(self.video_start_sound))
+                # self.ACTION = False                
                 return "" + microfone.recognize_google(
                     audio.result(), language="pt-BR"
                 )  # Retorno do audio
@@ -93,9 +92,9 @@ class Control:  # Classe de Controle de funções
 
     ## Audio to Audio
     def Audio_to_Audio(self, executor) -> None:
+        self.ACTION = True
         future_audio = executor.submit(self.Capture_Audio, executor)  # Captura o audio
         prompt = future_audio.result()
-        self.ACTION = True
         asyncio.run(self.jarvis_system.Text_To_Text(prompt))  # Envia uma pergunta de texto ao Jarvis
         # print(prompt) # Testar esse jeito
         self.ACTION = False
@@ -103,11 +102,11 @@ class Control:  # Classe de Controle de funções
     ## Image Audio
     def Image_Audio(self, frame, executor) -> None:
     # with ThreadPoolExecutor() as executor:  # Torna as funções sincronas
+        self.ACTION = True
         future_foto = executor.submit(self.Capture_Photo, frame)  # Captura uma foto
         future_audio = executor.submit(self.Capture_Audio, executor)  # Captura o audio
         image_path = future_foto.result()  # Pega o caminho da imagem
         prompt = future_audio.result() # Pega a transcrição do audio e passa como prompt
-        self.ACTION = True
         asyncio.run(self.jarvis_system.Image_To_Text(image_path, prompt))  # Envia uma pergunta de texto e imagem ao Jarvis
         self.ACTION = False
 
@@ -120,4 +119,4 @@ class Control:  # Classe de Controle de funções
         prompt = future_audio.result() # Pega a transcrição do audio e passa como prompt
         self.ACTION = True
         asyncio.run(self.jarvis_system.Video_To_Text(video_path, prompt)) # Envia uma pergunta de texto e video ao Jarvis # Precisa aguardar os thread terminarem
-        self.ACTION = False
+        self.ACTION = False1
