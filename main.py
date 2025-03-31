@@ -1,14 +1,13 @@
 import hands # Importação da classe do Hands
 import control # Importação da classe do Control
 import cv2 # Biblioteca que da acessoa câmera
-import time # Biblioteca de tempo para controle de algumas funções
 import asyncio  # Torna as funções assincronas
 from concurrent.futures import ThreadPoolExecutor # Torna as funções sincronas
 import math
 
 gesture_cooldown = 0
 
-async def main(): # Função de execução principal 
+async def main(): # Função de execução principal
   
   global gesture_cooldown
   
@@ -47,17 +46,17 @@ async def main(): # Função de execução principal
                   # Verificação do gesto de mão Positivo
                   (lambda: executor.submit(control_functions.Capture_Video, cap), lambda: hands_system.Map_Positive(h, w, hand_landmarks, frame), "Left", "Async", 30), # Chamada para o controle gravar um video
                   # Verificação do gesto de mão Levantar dedo
-                  (lambda: control_functions.Audio_to_Audio(), lambda: hands_system.Map_Speak(h, w, hand_landmarks, frame), "Right", "Sync", 20), # Chamada para o controle para fazer uma pergunta e agauarda a resposta
+                  (lambda: executor.submit(control_functions.Audio_to_Audio, executor), lambda: hands_system.Map_Speak(h, w, hand_landmarks, frame), "Right", "Async", 20), # Chamada para o controle para fazer uma pergunta e agauarda a resposta
                   # Verificação do gesto de mão Faz o L
-                  (lambda: control_functions.Image_Audio(frame), lambda: hands_system.Map_Squid(h, w, hand_landmarks, frame), "Left", "Sync", 20), # Chamada para o controle para fazer uma pergunta, analisar uma imagem e agauardar a resposta
+                  (lambda: executor.submit(control_functions.Image_Audio, frame, executor), lambda: hands_system.Map_Squid(h, w, hand_landmarks, frame), "Left", "Async", 20), # Chamada para o controle para fazer uma pergunta, analisar uma imagem e agauardar a resposta
                   # Verificação do gesto de mão Rock
-                  (lambda: control_functions.Video_Audio(cap), lambda: hands_system.Map_Rock(h, w, hand_landmarks, frame), "Right", "Sync", 20), # Chamada para o controle para fazer uma pergunta, analisar um video e agauardar a resposta
+                  (lambda: executor.submit(control_functions.Video_Audio, cap, executor), lambda: hands_system.Map_Rock(h, w, hand_landmarks, frame), "Right", "Async", 20), # Chamada para o controle para fazer uma pergunta, analisar um video e agauardar a resposta
                 ]
                 
                 # Dx, Dy = calculusNormalDistance(h, w, hand_landmarks)
                 
                 for func_exe, func_act, side, state, cooldown in checks: 
-                  if control_functions.ACTION != True and gesture_cooldown == 0: # and (Dx < 150 or Dy < 150)
+                  if control_functions.ACTION == False and gesture_cooldown == 0: # and (Dx < 150 or Dy < 150)
                     await Check_Gesture(func_exe, func_act, side, hand_label, state, cooldown, control_functions)
                 
                 # Reduz o cooldown a cada frame
@@ -70,6 +69,7 @@ async def main(): # Função de execução principal
         
         if cv2.waitKey(1) & 0xFF == ord('q'): # Encerra o programa clicando Q
           break
+          
         
     cap.release() # Fecha a camera
     cv2.destroyAllWindows() # Destroi a tela da camera
@@ -92,8 +92,6 @@ async def Check_Gesture(func_exe, func_act, side, hand_label, state, cooldown, c
     if state == "Async":
       control_functions.Control_Video = not control_functions.Control_Video
       func_exe()
-    else:
-      await func_exe()
 
 # def calculusNormalDistance(X, Y, hand_landmarks):
 #   w = 7.87 # 20cm -> 8pl
