@@ -6,6 +6,7 @@ import jarvis  # Importação da classe do Jarvis
 import manager
 import asyncio
 from pygame import mixer
+import os
 
 mixer.init() # Iniciando o serviço de audio do pygame
 
@@ -26,6 +27,9 @@ class Control:  # Classe de Controle de funções
         SOUND.play() # Execulta a resposta
         await asyncio.sleep(SOUND.get_length())
         SOUND.stop()
+    
+    def Recycle_midia(midia_path):
+        os.remove(midia_path)
     
     # Capture Photo
     def Capture_Photo(self, frame, executor):
