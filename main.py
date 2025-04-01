@@ -42,9 +42,9 @@ async def main(): # Função de execução principal
                 
                 checks = [
                   # Verificação do gesto de mão OK
-                  (lambda: executor.submit(control_functions.Capture_Photo, frame), lambda: hands_system.Map_Ok(h, w, hand_landmarks, frame), "Right", "Async", 20), # Chamada para o controle tirar uma foto
+                  (lambda: executor.submit(control_functions.Capture_Photo, frame, executor), lambda: hands_system.Map_Ok(h, w, hand_landmarks, frame), "Right", "Async", 20), # Chamada para o controle tirar uma foto
                   # Verificação do gesto de mão Positivo
-                  (lambda: executor.submit(control_functions.Capture_Video, cap), lambda: hands_system.Map_Positive(h, w, hand_landmarks, frame), "Left", "Async", 30), # Chamada para o controle gravar um video
+                  (lambda: executor.submit(control_functions.Capture_Video, cap, executor), lambda: hands_system.Map_Positive(h, w, hand_landmarks, frame), "Left", "Async", 30), # Chamada para o controle gravar um video
                   # Verificação do gesto de mão Levantar dedo
                   (lambda: executor.submit(control_functions.Audio_to_Audio, executor), lambda: hands_system.Map_Speak(h, w, hand_landmarks, frame), "Right", "Async", 20), # Chamada para o controle para fazer uma pergunta e agauarda a resposta
                   # Verificação do gesto de mão Faz o L
