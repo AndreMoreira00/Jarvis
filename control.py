@@ -3,8 +3,10 @@ import cv2  # Biblioteca que da acessoa câmera
 import speech_recognition as sr  # Biblioteca para transformar audio em texto
 from concurrent.futures import ThreadPoolExecutor  # Torna as funções sincronas 
 import jarvis  # Importação da classe do Jarvis
+import manager
 import asyncio
 from pygame import mixer
+import os
 
 mixer.init() # Iniciando o serviço de audio do pygame
 
@@ -12,6 +14,7 @@ class Control:  # Classe de Controle de funções
     def __init__(self):
         self.ACTION = False  # Variavel de controle de funções (Impossibilita que a função execulte varias vezes)
         self.jarvis_system = jarvis.Jarvis(mixer) # Criação do objeto Jarvis
+        self.menager_system = manager.Manager()
         self.Control_Video = False # Variavel de controle de video
         
         self.photo_take_sound = "audios_check/photo_take.wav" # Som para tirar fotos
@@ -25,25 +28,29 @@ class Control:  # Classe de Controle de funções
         await asyncio.sleep(SOUND.get_length())
         SOUND.stop()
     
+    def Recycle_midia(midia_path):
+        os.remove(midia_path)
+    
     # Capture Photo
-    def Capture_Photo(self, frame):
+    def Capture_Photo(self, frame, executor):
         # self.ACTION = True
         timesr = time.strftime(
             "%Y%m%d_%H%M%S"
         )  # Salvamos os arquivos com uma nomenclatura de ano/mes/dia/hora/minito/segundo
-        cv2.imwrite(f"image/{timesr}.jpg", frame)  # Salva a imagem
+        cv2.imwrite(f"midia/{timesr}.jpg", frame)  # Salva a imagem
         asyncio.run(self.play_confirmation_sound(self.photo_take_sound))
+        executor.submit(self.menager_system.uploadMidia, f'midia/{timesr}.jpg')
         # self.ACTION = False
-        return f"image/{timesr}.jpg"
+        return f"midia/{timesr}.jpg"
 
     # Capture Video
-    def Capture_Video(self, cap):
+    def Capture_Video(self, cap, executor):
         # self.ACTION = True
         # self.Control_Video = not self.Control_Video
         fourcc = cv2.VideoWriter_fourcc(*"XVID")  # Inicia uma camera temporaria só para gravar
         timesr = time.strftime("%Y%m%d_%H%M%S")  # Salvamos os arquivos com uma nomenclatura de ano/mes/dia/hora/minito/segundo
         fps = 30  # Varia com a qualidade da camera mas o padrão é 30fps
-        out = cv2.VideoWriter(f"video/{timesr}.avi", fourcc, fps, (640, 480))  # Objeto para salvar o video e suas caracteristicas (nome, formato, fps, tamanho da tela)
+        out = cv2.VideoWriter(f"midia/{timesr}.avi", fourcc, fps, (640, 480))  # Objeto para salvar o video e suas caracteristicas (nome, formato, fps, tamanho da tela)
         # print("gravacao iniciada")
         # self.ACTION = False
         # print("Gravando")
@@ -56,7 +63,8 @@ class Control:  # Classe de Controle de funções
         out.release()
         # print("Gravação finalizada")
         asyncio.run(self.play_confirmation_sound(self.video_end_sound))
-        return f"video/{timesr}.avi"
+        executor.submit(self.menager_system.uploadMidia, f'midia/{timesr}.avi')
+        return f"midia/{timesr}.avi"
 
     # Capture Audio
     def Capture_Audio(self, executor):
@@ -103,7 +111,7 @@ class Control:  # Classe de Controle de funções
     def Image_Audio(self, frame, executor) -> None:
     # with ThreadPoolExecutor() as executor:  # Torna as funções sincronas
         self.ACTION = True
-        future_foto = executor.submit(self.Capture_Photo, frame)  # Captura uma foto
+        future_foto = executor.submit(self.Capture_Photo, frame, executor)  # Captura uma foto
         future_audio = executor.submit(self.Capture_Audio, executor)  # Captura o audio
         image_path = future_foto.result()  # Pega o caminho da imagem
         prompt = future_audio.result() # Pega a transcrição do audio e passa como prompt
@@ -113,10 +121,10 @@ class Control:  # Classe de Controle de funções
     ## Video Audio
     async def Video_Audio(self, cap, executor) -> None:
         # with ThreadPoolExecutor() as executor:  # Torna as funções sincronas
-        future_video = executor.submit(self.Capture_Video, cap)  # Grava um video 
+        future_video = executor.submit(self.Capture_Video, cap, executor)  # Grava um video 
         future_audio = executor.submit(self.Capture_Audio)  # Captura o audio # Trava o programa. Conflito com Thread # Await aqui! 
         video_path = future_video.result()  # Pega o caminho do video
         prompt = future_audio.result() # Pega a transcrição do audio e passa como prompt
         self.ACTION = True
         asyncio.run(self.jarvis_system.Video_To_Text(video_path, prompt)) # Envia uma pergunta de texto e video ao Jarvis # Precisa aguardar os thread terminarem
-        self.ACTION = False1
+        self.ACTION = False
