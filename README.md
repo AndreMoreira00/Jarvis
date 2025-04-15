@@ -6,7 +6,7 @@
 
 ## 📝 Description
 
-**Jarvis-IF-Ciência** is a cutting-edge project inspired by Iron Man’s glasses, combining artificial intelligence and MediaPipe for gesture-based interaction. The project aims to create smart glasses running on a Raspberry Pi 3, featuring:
+**Jarvis** is a cutting-edge project inspired by Iron Man’s glasses, combining artificial intelligence and MediaPipe for gesture-based interaction. The project aims to create smart glasses running on a Raspberry Pi 3, featuring:
 
 - **Bone-Conduction Audio Output**: Built into the glasses' frame for discrete audio transmission.
 - **Mini Front Camera**: Captures real-time images and videos for AI-based analysis.
