@@ -48,7 +48,7 @@ class Control:  # Classe de Controle de funções
         # self.ACTION = True
         # self.Control_Video = not self.Control_Video
         fourcc = cv2.VideoWriter_fourcc(*"XVID")  # Inicia uma camera temporaria só para gravar
-        timesr = time.strftime("%Y%m%d_%H%M%S")  # Salvamos os arquivos com uma nomenclatura de ano/mes/dia/hora/minito/segundo
+        timesr = time.strftime("%Y%m%d_%H%M%S")  # Salvamos os arquivos com o nome de ano/mes/dia/hora/minito/segundo
         fps = 30  # Varia com a qualidade da camera mas o padrão é 30fps
         out = cv2.VideoWriter(f"midia/{timesr}.avi", fourcc, fps, (640, 480))  # Objeto para salvar o video e suas caracteristicas (nome, formato, fps, tamanho da tela)
         # print("gravacao iniciada")
@@ -119,7 +119,8 @@ class Control:  # Classe de Controle de funções
         self.ACTION = False
 
     ## Video Audio
-    async def Video_Audio(self, cap, executor) -> None:
+    def Video_Audio(self, cap, executor) -> None:
+        print("Ate aqui!")
         # with ThreadPoolExecutor() as executor:  # Torna as funções sincronas
         future_video = executor.submit(self.Capture_Video, cap, executor)  # Grava um video 
         future_audio = executor.submit(self.Capture_Audio)  # Captura o audio # Trava o programa. Conflito com Thread # Await aqui! 

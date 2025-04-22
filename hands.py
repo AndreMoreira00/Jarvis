@@ -154,6 +154,7 @@ class Hands:
     anelar_16_x, anelar_16_y = int(anelar_16.x * w), int(anelar_16.y * h)
     anelar_13 = hand_landmarks.landmark[13]
     anelar_13_x, anelar_13_y = int(anelar_13.x * w), int(anelar_13.y * h)
+    
     if (indicador_8_y < indicador_6_y - 0.05 * h and
           mindinho_20_y < mindinho_18_y - 0.05 * h and                  
           medio_12_y > medio_9_y and                   
