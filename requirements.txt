@@ -12,3 +12,4 @@ playsound
 mpmath
 mediapipe
 pygame
+oauth2client
