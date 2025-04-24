@@ -50,8 +50,22 @@ class Jarvis: # Classe do Jarvis
     # Translate voice from Jarvis
     # Função que recebe a resposta do Gemini em texto e tranforma em audio com a voz do Jarvis
     async def Translate(self, text) -> None:
-      communicate = edge_tts.Communicate(text, self.VOICE) # Conversão de texto para audio
-      await communicate.save(self.PATH_FILE) # Salva a conversão
+      char_removidos = {
+        '\t': ' ',
+        '*': ' ',
+        '\u200b': ' ',
+        '\u200c': ' ',
+        '\u200d': ' ',
+        '\ufeff': ' ',
+        '  ': ' ',
+      }
+      
+      for antigo, novo in char_removidos.items():
+        text = text.replace(antigo, novo)
+
+      text = text.strip()
+      communicate = edge_tts.Communicate(text, self.VOICE)
+      await communicate.save(self.PATH_FILE)
     
     # Response Text to Text
     # Função que recebe nossa pergunta e manda para Gemini, depois que ele retorna a resposta ela é transformada em audio

@@ -123,9 +123,9 @@ class Control:  # Classe de Controle de funções
         print("Ate aqui!")
         # with ThreadPoolExecutor() as executor:  # Torna as funções sincronas
         future_video = executor.submit(self.Capture_Video, cap, executor)  # Grava um video 
-        future_audio = executor.submit(self.Capture_Audio)  # Captura o audio # Trava o programa. Conflito com Thread # Await aqui! 
+        future_audio = executor.submit(self.Capture_Audio)  # Captura o audio
         video_path = future_video.result()  # Pega o caminho do video
         prompt = future_audio.result() # Pega a transcrição do audio e passa como prompt
         self.ACTION = True
-        asyncio.run(self.jarvis_system.Video_To_Text(video_path, prompt)) # Envia uma pergunta de texto e video ao Jarvis # Precisa aguardar os thread terminarem
+        asyncio.run(self.jarvis_system.Video_To_Text(video_path, prompt)) # Envia uma pergunta de texto e video ao Jarvis
         self.ACTION = False
