@@ -13,3 +13,7 @@ mpmath
 mediapipe
 pygame
 oauth2client
+time
+os
+google-oauth2-tool
+google-auth-oauthlib

@@ -4,7 +4,6 @@ import requests
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
-from concurrent.futures import ThreadPoolExecutor
 
 class Manager:
     def __init__(self):
@@ -81,7 +80,3 @@ class Manager:
             photo_url = self.getPhotoUrl(access_token, photo_id)
         else:
             response.raise_for_status()
-
-# with ThreadPoolExecutor() as executor:
-#   maneger = Manager()
-#   maneger.uploadMidia('./image/Colors.jpeg')

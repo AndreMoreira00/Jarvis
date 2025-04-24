@@ -35,7 +35,6 @@ class Jarvis: # Classe do Jarvis
       # Config Voice
       VOICES = ["pt-BR-AntonioNeural"] # Escolhendo a voz do Jarvis
       self.VOICE = VOICES[0] 
-      # self.OUTPUT_FILE = "response/translate.mp3" # Caminho onde o audio da resposta do Jarvis vai ser salva
       # Config Paths
       self.PATH_FILE = "./response/translate.mp3" # Caminho onde o audio da resposta do Jarvis vai ser executado
       
