@@ -1,7 +1,7 @@
 import cv2
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
-from error.error_system_logs import errorSystemLogUser
+from error.error_system_logs import errorSystemLogUser, errorSystemLogDev
 import math
 from app.controller.modules.controller_actions_hands import ControllerHands
 
@@ -11,9 +11,10 @@ async def controllerMain():
   global modelCamera
   for i in range(3): 
     try:
-      cap = cv2.VideoCapture(modelCamera)
+      cap = cv2.VideoCapture(1)
     except Exception as e:
       errorSystemLogUser(f"Error: Failed to start camera, reloading function{e}")  
+      errorSystemLogDev(f"Error in controller_main.py - Failed to start camera {e}")
       modelCamera += 1
       
   with ThreadPoolExecutor() as executor:

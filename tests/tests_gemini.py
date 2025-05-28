@@ -1,11 +1,8 @@
 import unittest
-from pygame import mixer
 from app.apis.routes.google_gemini_routes import RoutesGemini
 import asyncio
 
-mixer.init()
-
-test = RoutesGemini(mixer)
+test = RoutesGemini()
 
 class TestGeminiRoutes(unittest.TestCase):
   

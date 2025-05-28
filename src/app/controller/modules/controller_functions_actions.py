@@ -1,4 +1,7 @@
 from app.controller.modules.controller_check_audio import AudiosChecks
+import time
+import cv2
+import asyncio
 
 class BasicFunctions():
   def __init__(self):
@@ -13,5 +16,5 @@ class BasicFunctions():
     timesr = time.strftime("%Y%m%d_%H%M%S")
     cv2.imwrite(f"{self._pathSaveDataImages}/{timesr}.jpg", frame)
     asyncio.run(self.audiosChecks.playConfirmationSound(self.audiosChecks.photoTakeSound))
-    executor.submit(self.menager_system.uploadMidia, f'midia/{timesr}.jpg')
+    # executor.submit(self.menager_system.uploadMidia, f'midia/{timesr}.jpg')
     return f"{self._pathSaveDataImages}/{timesr}.jpg"
