@@ -1,50 +1,48 @@
 import cv2
-import asyncio
 from concurrent.futures import ThreadPoolExecutor
-from error.error_system_logs import errorSystemLogUser, errorSystemLogDev
-import math
+from app.error.error_system_logs import errorSystemLogUser, errorSystemLogDev
 from app.controller.modules.controller_actions_hands import ControllerHands
 
-modelCamera = 0
 
 async def controllerMain():
-  global modelCamera
-  for i in range(3): 
+  for modelCamera in range(3): #type: ignore
     try:
       cap = cv2.VideoCapture(1)
     except Exception as e:
-      errorSystemLogUser(f"Error: Failed to start camera, reloading function{e}")  
+      await errorSystemLogUser(f"Error: Failed to start camera, reloading function {e}")  
       errorSystemLogDev(f"Error in controller_main.py - Failed to start camera {e}")
-      modelCamera += 1
       
   with ThreadPoolExecutor() as executor:
     controllerHands = ControllerHands()
     
-    while cap.isOpened():
-      ret, frame = cap.read()
+    while cap.isOpened(): #type: ignore
+      ret, frame = cap.read() #type: ignore
       
-      rgbFrame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-      resultsHands = controllerHands.hands.process(rgbFrame)
+      if not ret: # type: ignore
+        print("Erro ao capturar o frame.")
+        break
+  
+      rgbFrame: object = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+      resultsHands: object = controllerHands.hands.process(rgbFrame) #type: ignore
       
-      if resultsHands.multi_hand_landmarks and resultsHands.multi_handedness:
-        for hand_landmarks, hand_handedness in zip(resultsHands.multi_hand_landmarks, resultsHands.multi_handedness):
-          hand_label = hand_handedness.classification[0].label
+      if resultsHands.multi_hand_landmarks and resultsHands.multi_handedness: #type: ignore
+        for hand_landmarks, hand_handedness in zip(resultsHands.multi_hand_landmarks, resultsHands.multi_handedness): #type: ignore
+          
+          hand_label: tuple[float] = hand_handedness.classification[0].label # type: ignore
           
           h, w, _ = frame.shape
           
-          executor.submit(controllerHands.checkGesture, executor, frame, cap, h, w, hand_landmarks)
+          executor.submit(controllerHands.checkGesture, executor, frame, cap, h, w, hand_landmarks, hand_label) #type: ignore
           
           if controllerHands.gestureCooldown > 0:
             controllerHands.gestureCooldown -= 1 
 
-          controllerHands.mpDrawing.draw_landmarks(frame, hand_landmarks, controllerHands.mpHands.HAND_CONNECTIONS)
+          controllerHands.mpDrawing.draw_landmarks(frame, hand_landmarks, controllerHands.mpHands.HAND_CONNECTIONS) # type: ignore
           
       cv2.imshow("MediaPipe Hands", frame)
       
       if cv2.waitKey(1) & 0xFF == ord('q'):
         break
     
-    cap.release()
+    cap.release() #type: ignore
     cv2.destroyAllWindows()
-    
-asyncio.run(controllerMain())
