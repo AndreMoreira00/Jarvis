@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\jessi\Documents\eu\Jarvis\Jarvis_decoder\build\CMakeFiles\5895330de7fe7c2db2c2beeb45df5d34\generate.stamp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{0372AD93-44A4-3EA6-BE4C-14896AD1B453}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

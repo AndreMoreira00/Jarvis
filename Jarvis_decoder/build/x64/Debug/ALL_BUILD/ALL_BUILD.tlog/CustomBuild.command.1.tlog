@@ -1,0 +1,10 @@
+^C:\USERS\JESSI\DOCUMENTS\EU\JARVIS\JARVIS_DECODER\CMAKELISTS.TXT
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/jessi/Documents/eu/Jarvis/Jarvis_decoder -BC:/Users/jessi/Documents/eu/Jarvis/Jarvis_decoder/build --check-stamp-file C:/Users/jessi/Documents/eu/Jarvis/Jarvis_decoder/build/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

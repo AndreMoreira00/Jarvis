@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\Users\jessi\Documents\eu\Jarvis\Jarvis_decoder\src\app\main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\jessi\Documents\eu\Jarvis\Jarvis_decoder\src\app\modules\camera\camera.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\jessi\Documents\eu\Jarvis\Jarvis_decoder\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{481118DC-499F-3C5C-9E33-16255EA29B71}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
