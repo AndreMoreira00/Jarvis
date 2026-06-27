@@ -19,10 +19,10 @@ import pytest
 
 import control as control_mod
 
-
 # ---------------------------------------------------------------------------
 # Helpers / Fixtures
 # ---------------------------------------------------------------------------
+
 
 def _make_future(value):
     """Cria um ``concurrent.futures.Future`` ja resolvido com ``value``."""
@@ -71,6 +71,7 @@ class _ImmediateExecutor:
 # 1. __init__
 # ---------------------------------------------------------------------------
 
+
 class TestInit:
     """Estado inicial e efeitos colaterais do construtor."""
 
@@ -109,13 +110,14 @@ class TestInit:
 # 2. toggle_recording / is_recording (Event substitui a antiga flag Control_Video)
 # ---------------------------------------------------------------------------
 
+
 class TestToggleRecording:
     """Estado de gravacao via threading.Event."""
 
     def test_toggle_liga_e_desliga(self, control_instance):
         """toggle alterna o Event e o retorno reflete o novo estado."""
         assert control_instance.is_recording() is False
-        assert control_instance.toggle_recording() is True   # passou a gravar
+        assert control_instance.toggle_recording() is True  # passou a gravar
         assert control_instance.is_recording() is True
         assert control_instance.toggle_recording() is False  # parou
         assert control_instance.is_recording() is False
@@ -124,6 +126,7 @@ class TestToggleRecording:
 # ---------------------------------------------------------------------------
 # 3. play_confirmation_sound (agora sincrono)
 # ---------------------------------------------------------------------------
+
 
 class TestPlayConfirmationSound:
     """Reproducao sincrona de som de confirmacao."""
@@ -145,14 +148,17 @@ class TestPlayConfirmationSound:
 # 4. Capture_Photo
 # ---------------------------------------------------------------------------
 
+
 class TestCapturePhoto:
     """Captura de foto: grava o arquivo, dispara upload e retorna o caminho."""
 
     def test_grava_jpg_com_timestamp_e_agenda_upload(self, control_instance, fake_frame):
         """imwrite recebe midia/<timestamp>.jpg; upload e agendado; retorna o caminho."""
         executor = MagicMock(name="executor")
-        with patch.object(control_mod, "cv2") as mk_cv2, \
-             patch.object(control_mod.time, "strftime", return_value="20260627_120000"):
+        with (
+            patch.object(control_mod, "cv2") as mk_cv2,
+            patch.object(control_mod.time, "strftime", return_value="20260627_120000"),
+        ):
             caminho = control_instance.Capture_Photo(fake_frame, executor)
 
         esperado = "midia/20260627_120000.jpg"
@@ -165,8 +171,10 @@ class TestCapturePhoto:
     def test_toca_som_de_foto(self, control_instance, fake_frame):
         """O som de confirmacao usado e o photo_take_sound (chamada sincrona)."""
         executor = MagicMock(name="executor")
-        with patch.object(control_mod, "cv2"), \
-             patch.object(control_instance, "play_confirmation_sound") as mk_play:
+        with (
+            patch.object(control_mod, "cv2"),
+            patch.object(control_instance, "play_confirmation_sound") as mk_play,
+        ):
             control_instance.Capture_Photo(fake_frame, executor)
         mk_play.assert_called_once_with(control_instance.photo_take_sound)
 
@@ -174,6 +182,7 @@ class TestCapturePhoto:
 # ---------------------------------------------------------------------------
 # 5. Capture_Video (controlado pelo Event _recording)
 # ---------------------------------------------------------------------------
+
 
 class TestCaptureVideo:
     """Gravacao de video controlada por ``_recording`` (threading.Event)."""
@@ -183,8 +192,10 @@ class TestCaptureVideo:
         cap = MagicMock(name="cap")
         executor = MagicMock(name="executor")
         out = MagicMock(name="out")
-        with patch.object(control_mod, "cv2") as mk_cv2, \
-             patch.object(control_mod.time, "strftime", return_value="20260627_120000"):
+        with (
+            patch.object(control_mod, "cv2") as mk_cv2,
+            patch.object(control_mod.time, "strftime", return_value="20260627_120000"),
+        ):
             mk_cv2.VideoWriter.return_value = out
             caminho = control_instance.Capture_Video(cap, executor)
 
@@ -214,9 +225,11 @@ class TestCaptureVideo:
 
         cap.read.side_effect = read_then_stop
 
-        with patch.object(control_mod, "cv2") as mk_cv2, \
-             patch.object(control_mod.time, "strftime", return_value="20260627_120000"), \
-             patch.object(control_mod.time, "sleep"):
+        with (
+            patch.object(control_mod, "cv2") as mk_cv2,
+            patch.object(control_mod.time, "strftime", return_value="20260627_120000"),
+            patch.object(control_mod.time, "sleep"),
+        ):
             mk_cv2.VideoWriter.return_value = out
             caminho = control_instance.Capture_Video(cap, executor)
 
@@ -234,9 +247,11 @@ class TestCaptureVideo:
         control_instance._recording.set()
         cap.read.return_value = (False, None)  # camera falhou
 
-        with patch.object(control_mod, "cv2") as mk_cv2, \
-             patch.object(control_mod.time, "strftime", return_value="20260627_120000"), \
-             patch.object(control_mod.time, "sleep"):
+        with (
+            patch.object(control_mod, "cv2") as mk_cv2,
+            patch.object(control_mod.time, "strftime", return_value="20260627_120000"),
+            patch.object(control_mod.time, "sleep"),
+        ):
             mk_cv2.VideoWriter.return_value = out
             control_instance.Capture_Video(cap, executor)
 
@@ -249,6 +264,7 @@ class TestCaptureVideo:
 # 6. Capture_Audio (retorna None em qualquer falha)
 # ---------------------------------------------------------------------------
 
+
 class TestCaptureAudio:
     """Transcricao de voz e tratamento de erros do reconhecimento."""
 
@@ -256,8 +272,10 @@ class TestCaptureAudio:
     def recognizer(self):
         """Recognizer falso configuravel; substitui sr.Recognizer no modulo control."""
         rec = MagicMock(name="recognizer")
-        with patch.object(control_mod.sr, "Recognizer", return_value=rec), \
-             patch.object(control_mod.sr, "Microphone") as mk_mic:
+        with (
+            patch.object(control_mod.sr, "Recognizer", return_value=rec),
+            patch.object(control_mod.sr, "Microphone") as mk_mic,
+        ):
             mk_mic.return_value.__enter__.return_value = MagicMock(name="source")
             yield rec
 
@@ -316,6 +334,7 @@ class TestCaptureAudio:
 # ---------------------------------------------------------------------------
 # 7. Fluxos que orquestram o Jarvis
 # ---------------------------------------------------------------------------
+
 
 class TestAudioToAudio:
     """Audio_to_Audio: voz -> Gemini (texto)."""
@@ -416,12 +435,13 @@ class TestVideoAudio:
 # 8. Recycle_midia: bug NAO corrigido na Onda 1 (codigo morto, deferido)
 # ---------------------------------------------------------------------------
 
+
 class TestRecycleMidia:
     """Recycle_midia foi declarado sem ``self`` (control.py). Deferido."""
 
     @pytest.mark.xfail(
         reason="Recycle_midia(midia_path) declarado sem self -> chamar via instancia "
-               "passa o self como midia_path (deferido para onda futura)",
+        "passa o self como midia_path (deferido para onda futura)",
         strict=False,
     )
     def test_bug_recycle_midia_sem_self(self, control_instance):

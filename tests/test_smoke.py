@@ -8,9 +8,8 @@ teste e confiavel.
 
 import importlib
 
-import pytest
-
 import conftest
+import pytest
 
 
 def test_modulos_de_producao_importam_sem_libs_pesadas():
@@ -27,7 +26,9 @@ def test_construtor_de_landmarks_tem_21_pontos():
 
 
 @pytest.mark.parametrize("nome_map,coords", list(conftest.ALL_GESTURES.items()))
-def test_fixture_canonica_dispara_seu_gesto(nome_map, coords, hands_instance, frame_size, fake_frame):
+def test_fixture_canonica_dispara_seu_gesto(
+    nome_map, coords, hands_instance, frame_size, fake_frame
+):
     h, w = frame_size
     lm = conftest.make_hand_landmarks(coords)
     assert getattr(hands_instance, nome_map)(h, w, lm, fake_frame) is True

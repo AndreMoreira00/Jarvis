@@ -418,6 +418,37 @@ dirs de runtime ignorados e `.env.example` rastreavel; `git ls-files` sem nenhum
 `.pyc` nem segredo real; `requirements.txt` sem stdlib/invalidos; suite
 **187 passed, 1 xfailed**. Sem `git commit`.
 
+### Onda 3 — concluida (2026-06-27)
+
+**Contexto:** `pytest`+`coverage` ja vinham do trabalho paralelo. Completei o
+tooling (ambiente tinha uv 0.11 + ruff 0.15; mypy instalado via `uvx`).
+
+**Mudancas:**
+- `pyproject.toml`: `[project]` (name/version/`requires-python>=3.11` +
+  `dependencies` espelhando o requirements limpo), `[dependency-groups].dev`
+  (ruff, mypy, pytest, pytest-asyncio, pytest-cov), `[tool.uv] package=false`
+  (projeto **virtual** — empacotamento real fica na Onda 5), `[tool.ruff]` +
+  `[tool.ruff.lint]` (select `E,F,I,UP,B`; ignore `E501`; per-file-ignores para
+  `tests/*` e `main.py`/`B023`) e `[tool.mypy]` (`ignore_missing_imports`, `files`
+  = 6 modulos de producao).
+- **`uv.lock`** gerado via `uv lock` (83 pacotes resolvidos).
+- **ruff:** `ruff check --fix` (31 fixes seguros) + `ruff format` (14 arquivos).
+  Restantes tratados conforme decisao:
+  - `hands.py` — 45 `F841` (coordenadas nao usadas) **removidos** (autofix,
+    validado pela suite).
+  - `main.py` — 22 `B023` (lambdas com loop var) **ignorados** via per-file-ignore
+    (chamadas na mesma iteracao; falso alarme; reestruturacao na Onda 6) +
+    `zip(..., strict=True)`.
+  - `manager.py` — removido o encadeamento morto `response_json/photo_id/photo_url`
+    (buscava URL e descartava); `getPhotoUrl` permanece para uso futuro.
+- `tests/test_manager.py` ajustado ao novo contrato (uploadMidia nao resolve mais URL).
+
+**Comandos (uv):** `uv sync` (deps+dev), `uv run pytest`, `ruff check` /
+`ruff format`, `uvx mypy`.
+
+**Verificacao:** `ruff check` limpo, `ruff format --check` ok, `uvx mypy` sem
+problemas, suite **187 passed, 1 xfailed**. Sem `git commit`.
+
 ## Referencias
 
 - Codigo avaliado: [main.py](../../main.py), [control.py](../../control.py),

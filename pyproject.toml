@@ -1,3 +1,70 @@
+[project]
+name = "jarvis"
+version = "0.1.0"
+description = "Oculos inteligente: visao computacional (MediaPipe) + IA Gemini + TTS + Google Photos"
+requires-python = ">=3.11"
+dependencies = [
+    # Visao computacional e captura
+    "opencv-python",
+    "mediapipe",
+    "numpy",
+    # Audio: reconhecimento de fala (mic) e sintese de voz
+    "SpeechRecognition",
+    "PyAudio",
+    "edge-tts",
+    "pygame",
+    # IA (Google Gemini)
+    "google-generativeai",
+    # Config e credenciais (Google Photos via OAuth)
+    "python-dotenv",
+    "requests",
+    "google-auth",
+    "google-auth-oauthlib",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15",
+    "mypy>=1.8",
+    "pytest>=8",
+    "pytest-asyncio>=0.23",
+    "pytest-cov>=5",
+]
+
+[tool.uv]
+# Projeto "virtual": uv gerencia deps e lockfile, mas NAO empacota/instala o
+# codigo (modulos ainda na raiz; empacotamento real -> Onda 5, com src/jarvis).
+package = false
+
+# ---------------------------------------------------------------------------
+# Ruff (lint + format) — config gradual: o codigo legado ainda usa PascalCase
+# (Capture_Photo, Map_Ok...), entao a regra de naming (N) NAO entra agora;
+# a renomeacao para snake_case acontece na reestruturacao (Onda 5-6).
+# ---------------------------------------------------------------------------
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = [".claude", "docs_projeto"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = [
+    "E501",  # linha longa: comentarios legados em PT-BR; o formatter cuida do codigo
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["B011"]  # asserts e mocks dos testes nao seguem as mesmas regras
+"main.py" = ["B023"]  # lambdas dos checks rodam na mesma iteracao (sem captura tardia); Onda 6
+
+# ---------------------------------------------------------------------------
+# Mypy — modo gradual: libs sem stubs (cv2, mediapipe, edge_tts, pygame...)
+# sao ignoradas; checagem so sobre os modulos de producao na raiz.
+# ---------------------------------------------------------------------------
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+files = ["control.py", "main.py", "jarvis.py", "manager.py", "hands.py", "ProjectConfig.py"]
+
 [tool.pytest.ini_options]
 # Raiz do repo no sys.path para os testes importarem hands/control/jarvis/...
 pythonpath = ["."]

@@ -17,13 +17,12 @@ from unittest.mock import AsyncMock, MagicMock, call
 
 import pytest
 
-import conftest  # garante stubs instalados antes de importar jarvis
 import jarvis
-
 
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture
 def mixer():
@@ -62,6 +61,7 @@ def jarvis_factory(mixer):
 # ---------------------------------------------------------------------------
 # __init__
 # ---------------------------------------------------------------------------
+
 
 class TestInit:
     """Construcao do Jarvis: persona, voz, paths e bootstrap do Gemini."""
@@ -105,6 +105,7 @@ class TestInit:
 # Translate
 # ---------------------------------------------------------------------------
 
+
 class TestTranslate:
     """Limpeza de texto + sintese de voz (edge_tts)."""
 
@@ -114,21 +115,19 @@ class TestTranslate:
         await obj.Translate("ola mestre")
 
         jarvis.edge_tts.Communicate.assert_called_once_with("ola mestre", obj.VOICE)
-        jarvis.edge_tts.Communicate.return_value.save.assert_awaited_once_with(
-            obj.PATH_FILE
-        )
+        jarvis.edge_tts.Communicate.return_value.save.assert_awaited_once_with(obj.PATH_FILE)
 
     @pytest.mark.parametrize(
         "bruto,esperado",
         [
-            ("\tola", "ola"),                       # tab vira espaco e strip remove
-            ("*negrito*", "negrito"),               # asteriscos viram espaco + strip
-            ("a​b", "a b"),                     # zero-width space -> espaco
-            ("a‌b", "a b"),                     # zero-width non-joiner -> espaco
-            ("a‍b", "a b"),                     # zero-width joiner -> espaco
-            ("﻿ola", "ola"),                   # BOM/zero-width no-break -> espaco + strip
-            ("ola  mestre", "ola mestre"),          # duplo-espaco vira espaco unico
-            ("  ola mestre  ", "ola mestre"),       # strip nas pontas
+            ("\tola", "ola"),  # tab vira espaco e strip remove
+            ("*negrito*", "negrito"),  # asteriscos viram espaco + strip
+            ("a​b", "a b"),  # zero-width space -> espaco
+            ("a‌b", "a b"),  # zero-width non-joiner -> espaco
+            ("a‍b", "a b"),  # zero-width joiner -> espaco
+            ("﻿ola", "ola"),  # BOM/zero-width no-break -> espaco + strip
+            ("ola  mestre", "ola mestre"),  # duplo-espaco vira espaco unico
+            ("  ola mestre  ", "ola mestre"),  # strip nas pontas
         ],
     )
     async def test_normaliza_caracteres_especiais(self, jarvis_factory, bruto, esperado):
@@ -148,6 +147,7 @@ class TestTranslate:
 # ---------------------------------------------------------------------------
 # Text_To_Text
 # ---------------------------------------------------------------------------
+
 
 class TestTextToText:
     """Pergunta em texto -> Gemini -> fala."""
@@ -184,6 +184,7 @@ class TestTextToText:
 # ---------------------------------------------------------------------------
 # Image_To_Text
 # ---------------------------------------------------------------------------
+
 
 class TestImageToText:
     """Imagem + pergunta -> Gemini -> fala."""
@@ -225,6 +226,7 @@ class TestImageToText:
 # ---------------------------------------------------------------------------
 # Video_To_Text
 # ---------------------------------------------------------------------------
+
 
 def _fake_video_file(states):
     """Cria um mock de video_file cujo .state.name percorre ``states`` a cada leitura.
@@ -323,6 +325,7 @@ class TestVideoToText:
 # ---------------------------------------------------------------------------
 # Delete_Cahche_Files
 # ---------------------------------------------------------------------------
+
 
 class TestDeleteCacheFiles:
     """Limpeza dos arquivos que ficam na memoria do Gemini."""

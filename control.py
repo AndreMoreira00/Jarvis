@@ -1,12 +1,14 @@
+import asyncio
+import os
+import threading  # Event de gravacao thread-safe + event loop por thread
 import time  # Biblioteca de tempo para controle de algumas funcoes
+
 import cv2  # Biblioteca que da acesso a camera
 import speech_recognition as sr  # Biblioteca para transformar audio em texto
-import threading  # Event de gravacao thread-safe + event loop por thread
-import asyncio
+from pygame import mixer
+
 import jarvis  # Importacao da classe do Jarvis
 import manager
-from pygame import mixer
-import os
 
 
 class Control:  # Classe de Controle de funcoes
@@ -19,8 +21,12 @@ class Control:  # Classe de Controle de funcoes
         self._tls = threading.local()  # Guarda um event loop por worker thread
 
         self.photo_take_sound = "audios_check/photo_take.wav"  # Som para tirar fotos
-        self.audio_start_sound = "audios_check/audio_starter.wav"  # Som para inicio de captura de audio
-        self.video_start_sound = "audios_check/video_starter.wav"  # Som para inicio de gravacao de video
+        self.audio_start_sound = (
+            "audios_check/audio_starter.wav"  # Som para inicio de captura de audio
+        )
+        self.video_start_sound = (
+            "audios_check/video_starter.wav"  # Som para inicio de gravacao de video
+        )
         self.video_end_sound = "audios_check/video_out.wav"  # Som para termino de gravacao de video
 
     def _run(self, coro):
@@ -59,9 +65,7 @@ class Control:  # Classe de Controle de funcoes
 
     # Capture Photo
     def Capture_Photo(self, frame, executor):
-        timesr = time.strftime(
-            "%Y%m%d_%H%M%S"
-        )  # Nomenclatura ano/mes/dia/hora/minuto/segundo
+        timesr = time.strftime("%Y%m%d_%H%M%S")  # Nomenclatura ano/mes/dia/hora/minuto/segundo
         cv2.imwrite(f"midia/{timesr}.jpg", frame)  # Salva a imagem
         self.play_confirmation_sound(self.photo_take_sound)
         executor.submit(self.menager_system.uploadMidia, f"midia/{timesr}.jpg")
@@ -100,9 +104,7 @@ class Control:  # Classe de Controle de funcoes
             )  # Calibra o microfone para o ruido ambiente
             self.play_confirmation_sound(self.video_start_sound)
             try:
-                audio = executor.submit(
-                    microfone.listen, source, timeout=5, phrase_time_limit=5
-                )
+                audio = executor.submit(microfone.listen, source, timeout=5, phrase_time_limit=5)
                 text = microfone.recognize_google(audio.result(), language="pt-BR")
                 return text or None  # None sinaliza "sem pergunta valida"
             except (sr.UnknownValueError, sr.RequestError):

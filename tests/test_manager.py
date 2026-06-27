@@ -12,16 +12,16 @@ O foco e o NOSSO codigo (orquestracao OAuth, montagem de headers/URL/payload,
 sequencia de chamadas HTTP), nao as libs stubadas.
 """
 
-from unittest.mock import MagicMock, call, mock_open, patch
+from unittest.mock import MagicMock, mock_open, patch
 
 import pytest
 
 import manager
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture
 def mgr():
@@ -44,6 +44,7 @@ def fake_requests(monkeypatch):
 # 1. __init__ — constantes de configuracao
 # ---------------------------------------------------------------------------
 
+
 class TestInit:
     """Garante que os caminhos e o escopo OAuth ficam corretos na construcao."""
 
@@ -65,6 +66,7 @@ class TestInit:
 # 2. authorize_credentials — fluxo OAuth (token cacheado / refresh / login)
 # ---------------------------------------------------------------------------
 
+
 class TestAuthorizeCredentials:
     """Cobre os tres caminhos do fluxo de credenciais."""
 
@@ -82,9 +84,7 @@ class TestAuthorizeCredentials:
         flow_cls = MagicMock(name="InstalledAppFlow")
 
         monkeypatch.setattr(manager.os.path, "exists", lambda p: True)
-        monkeypatch.setattr(
-            manager.Credentials, "from_authorized_user_file", from_file
-        )
+        monkeypatch.setattr(manager.Credentials, "from_authorized_user_file", from_file)
         monkeypatch.setattr(manager, "InstalledAppFlow", flow_cls)
 
         m = mock_open()
@@ -149,9 +149,7 @@ class TestAuthorizeCredentials:
 
         # Arquivo de token NAO existe => pula o load e cai no fluxo interativo.
         monkeypatch.setattr(manager.os.path, "exists", lambda p: False)
-        monkeypatch.setattr(
-            manager.Credentials, "from_authorized_user_file", from_file
-        )
+        monkeypatch.setattr(manager.Credentials, "from_authorized_user_file", from_file)
         monkeypatch.setattr(manager, "InstalledAppFlow", flow_cls)
 
         m = mock_open()
@@ -162,9 +160,7 @@ class TestAuthorizeCredentials:
         # Como o arquivo nao existe, nao tentou carregar credencial do disco.
         from_file.assert_not_called()
         # Montou o fluxo a partir do client_secret e do escopo certos.
-        flow_cls.from_client_secrets_file.assert_called_once_with(
-            mgr.CLIENT_SECRET, mgr.SCOPES
-        )
+        flow_cls.from_client_secrets_file.assert_called_once_with(mgr.CLIENT_SECRET, mgr.SCOPES)
         flow.run_local_server.assert_called_once_with(port=0)
         # Persistiu o token novo.
         m.assert_called_once_with(mgr.CREDENTIALS_FILE, "w")
@@ -174,6 +170,7 @@ class TestAuthorizeCredentials:
 # ---------------------------------------------------------------------------
 # 3. getPhotoUrl — GET no mediaItem e extracao do baseUrl
 # ---------------------------------------------------------------------------
+
 
 class TestGetPhotoUrl:
     """Cobre montagem de header/URL e extracao do baseUrl da resposta."""
@@ -211,19 +208,20 @@ class TestGetPhotoUrl:
 # 4. uploadMidia — upload raw + batchCreate + resolucao da URL
 # ---------------------------------------------------------------------------
 
+
 class TestUploadMidia:
     """Cobre o happy-path completo e o caminho de erro HTTP."""
 
-    def test_happy_path_faz_upload_batchcreate_e_resolve_url(
-        self, mgr, fake_requests, monkeypatch
-    ):
-        """Sequencia: POST upload (200) -> POST batchCreate -> getPhotoUrl.
+    def test_happy_path_faz_upload_e_batchcreate(self, mgr, fake_requests, monkeypatch):
+        """Sequencia: POST upload (200) -> POST batchCreate.
 
         Verifica headers/payload de cada etapa e a ordem das chamadas requests.post.
+        A resolucao da URL (getPhotoUrl) foi REMOVIDA como codigo morto na Onda 3
+        (o resultado era descartado); aqui garantimos que ela nao e mais chamada.
         """
         # authorize_credentials e testado a parte; aqui so devolve um token fixo.
         monkeypatch.setattr(mgr, "authorize_credentials", lambda: "fake-token")
-        # getPhotoUrl tambem testado a parte; isola a resolucao final.
+        # getPhotoUrl nao deve mais ser chamado pelo uploadMidia.
         get_url = MagicMock(return_value="https://lh3/final")
         monkeypatch.setattr(mgr, "getPhotoUrl", get_url)
 
@@ -231,13 +229,8 @@ class TestUploadMidia:
         upload_resp = MagicMock(name="upload_resp")
         upload_resp.status_code = 200
         upload_resp.text = "UPLOAD-TOKEN-XYZ"
-        # 2a resposta: batchCreate -> json com o id do mediaItem.
+        # 2a resposta: batchCreate (corpo nao e mais lido pelo uploadMidia).
         batch_resp = MagicMock(name="batch_resp")
-        batch_resp.json.return_value = {
-            "newMediaItemResults": [
-                {"mediaItem": {"id": "MEDIA-ID-9"}}
-            ]
-        }
         fake_requests.post.side_effect = [upload_resp, batch_resp]
 
         m = mock_open(read_data=b"bytes-da-imagem")
@@ -262,10 +255,7 @@ class TestUploadMidia:
         assert primeira.kwargs["data"] == b"bytes-da-imagem"
 
         # --- POST 2: batchCreate com o upload_token e o basename do arquivo ---
-        assert (
-            segunda.args[0]
-            == "https://photoslibrary.googleapis.com/v1/mediaItems:batchCreate"
-        )
+        assert segunda.args[0] == "https://photoslibrary.googleapis.com/v1/mediaItems:batchCreate"
         assert segunda.kwargs["headers"] == {
             "Authorization": "Bearer fake-token",
             "Content-type": "application/json",
@@ -281,21 +271,17 @@ class TestUploadMidia:
             ]
         }
 
-        # Resolveu a URL final com o token e o id extraido do batchCreate.
-        get_url.assert_called_once_with("fake-token", "MEDIA-ID-9")
+        # A resolucao de URL foi removida (codigo morto): getPhotoUrl nao e chamado.
+        get_url.assert_not_called()
 
-    def test_filename_usa_basename_do_caminho(
-        self, mgr, fake_requests, monkeypatch
-    ):
+    def test_filename_usa_basename_do_caminho(self, mgr, fake_requests, monkeypatch):
         """fileName no payload deve ser apenas o basename, sem o diretorio."""
         monkeypatch.setattr(mgr, "authorize_credentials", lambda: "tok")
         monkeypatch.setattr(mgr, "getPhotoUrl", MagicMock(return_value="u"))
 
         upload_resp = MagicMock(status_code=200, text="UT")
         batch_resp = MagicMock()
-        batch_resp.json.return_value = {
-            "newMediaItemResults": [{"mediaItem": {"id": "ID"}}]
-        }
+        batch_resp.json.return_value = {"newMediaItemResults": [{"mediaItem": {"id": "ID"}}]}
         fake_requests.post.side_effect = [upload_resp, batch_resp]
 
         m = mock_open(read_data=b"x")

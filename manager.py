@@ -1,17 +1,18 @@
-import os
-import json
 import mimetypes
+import os
+
 import requests
+from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
-from google.auth.transport.requests import Request
+
 
 class Manager:
     def __init__(self):
-        self.CLIENT_SECRET = './env/client_secret.json'
-        self.CREDENTIALS_FILE = './env/token.json'
-        self.SCOPES = ['https://www.googleapis.com/auth/photoslibrary']
-    
+        self.CLIENT_SECRET = "./env/client_secret.json"
+        self.CREDENTIALS_FILE = "./env/token.json"
+        self.SCOPES = ["https://www.googleapis.com/auth/photoslibrary"]
+
     def authorize_credentials(self):
         creds = None
 
@@ -25,16 +26,13 @@ class Manager:
                 flow = InstalledAppFlow.from_client_secrets_file(self.CLIENT_SECRET, self.SCOPES)
                 creds = flow.run_local_server(port=0)
 
-            with open(self.CREDENTIALS_FILE, 'w') as token:
+            with open(self.CREDENTIALS_FILE, "w") as token:
                 token.write(creds.to_json())
 
-        return creds.token 
+        return creds.token
 
     def getPhotoUrl(self, access_token, photo_id):
-        headers = {
-            "Authorization": f"Bearer {access_token}",
-            "Content-type": "application/json"
-        }
+        headers = {"Authorization": f"Bearer {access_token}", "Content-type": "application/json"}
         url = f"https://photoslibrary.googleapis.com/v1/mediaItems/{photo_id}"
         response = requests.get(url, headers=headers)
         response_json = response.json()
@@ -42,43 +40,45 @@ class Manager:
 
     def uploadMidia(self, image_path):
         access_token = self.authorize_credentials()
-        mime_type = mimetypes.guess_type(image_path)[0] or 'application/octet-stream'
+        mime_type = mimetypes.guess_type(image_path)[0] or "application/octet-stream"
         headers = {
-            'Authorization': f'Bearer {access_token}',
-            'Content-type': 'application/octet-stream',
-            'X-Goog-Upload-Content-Type': mime_type,
-            'X-Goog-Upload-Protocol': 'raw'
+            "Authorization": f"Bearer {access_token}",
+            "Content-type": "application/octet-stream",
+            "X-Goog-Upload-Content-Type": mime_type,
+            "X-Goog-Upload-Protocol": "raw",
         }
 
-        with open(image_path, 'rb') as f:
+        with open(image_path, "rb") as f:
             image_data = f.read()
 
-        response = requests.post('https://photoslibrary.googleapis.com/v1/uploads',
-                                 headers=headers, data=image_data)
+        response = requests.post(
+            "https://photoslibrary.googleapis.com/v1/uploads", headers=headers, data=image_data
+        )
 
         if response.status_code == 200:
             upload_token = response.text
             headers = {
-                'Authorization': f'Bearer {access_token}',
-                'Content-type': 'application/json'
+                "Authorization": f"Bearer {access_token}",
+                "Content-type": "application/json",
             }
             payload = {
                 "newMediaItems": [
                     {
                         "simpleMediaItem": {
                             "fileName": os.path.basename(image_path),
-                            "uploadToken": upload_token
+                            "uploadToken": upload_token,
                         }
                     }
                 ]
             }
 
-            response = requests.post(
-                'https://photoslibrary.googleapis.com/v1/mediaItems:batchCreate',
-                headers=headers, json=payload
+            # Cria o item de midia na biblioteca. A consulta da URL final
+            # (getPhotoUrl) ainda nao e usada; sera ligada quando a feature de
+            # retorno de URL for concluida.
+            requests.post(
+                "https://photoslibrary.googleapis.com/v1/mediaItems:batchCreate",
+                headers=headers,
+                json=payload,
             )
-            response_json = response.json()
-            photo_id = response_json['newMediaItemResults'][0]['mediaItem']['id']
-            photo_url = self.getPhotoUrl(access_token, photo_id)
         else:
             response.raise_for_status()

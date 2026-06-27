@@ -21,10 +21,10 @@ from unittest.mock import MagicMock
 
 import pytest
 
-
 # ---------------------------------------------------------------------------
 # 1. Stubs de modulos de terceiros (injetados no import deste conftest)
 # ---------------------------------------------------------------------------
+
 
 def _ensure_pkg(dotted: str) -> ModuleType:
     """Garante que ``dotted`` e todos os seus pais existam em ``sys.modules``.
@@ -95,6 +95,7 @@ _install_stubs()
 # ---------------------------------------------------------------------------
 # 2. Construtor de landmarks falsos (MediaPipe Hands tem 21 pontos)
 # ---------------------------------------------------------------------------
+
 
 class _FakeLandmark:
     """Imita ``mp.solutions.hands`` landmark: tem .x, .y, .z normalizados [0,1]."""
@@ -256,6 +257,7 @@ ALL_GESTURES = {
 # 4. Fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def frame_size():
     """(h, w) padrao usado nos testes de geometria."""
@@ -278,4 +280,5 @@ def landmarks_factory():
 def hands_instance():
     """Instancia real de ``hands.Hands`` (com mediapipe stubado)."""
     import hands
+
     return hands.Hands()

@@ -16,19 +16,18 @@ testes de "nao dispara" checam valor *falsy* (``None``), nao ``False``.
 
 import math
 
-import pytest
-
 import conftest
+import pytest
 from conftest import (
-    WRIST,
-    THUMB_CMC, THUMB_MCP, THUMB_IP, THUMB_TIP,
-    INDEX_MCP, INDEX_PIP, INDEX_DIP, INDEX_TIP,
-    MIDDLE_MCP, MIDDLE_PIP, MIDDLE_DIP, MIDDLE_TIP,
-    RING_MCP, RING_PIP, RING_DIP, RING_TIP,
-    PINKY_MCP, PINKY_PIP, PINKY_DIP, PINKY_TIP,
+    INDEX_MCP,
+    INDEX_PIP,
+    INDEX_TIP,
+    PINKY_PIP,
+    PINKY_TIP,
+    THUMB_CMC,
+    THUMB_TIP,
     make_hand_landmarks,
 )
-
 
 # Lista dos metodos de reconhecimento, usada nas matrizes de exclusividade.
 MAP_NAMES = list(conftest.ALL_GESTURES.keys())
@@ -37,6 +36,7 @@ MAP_NAMES = list(conftest.ALL_GESTURES.keys())
 # ---------------------------------------------------------------------------
 # Helpers locais
 # ---------------------------------------------------------------------------
+
 
 def _call(hands_instance, map_name, coords, h=1000, w=1000):
     """Atalho: monta landmarks a partir de ``coords`` e chama ``map_name``."""
@@ -47,6 +47,7 @@ def _call(hands_instance, map_name, coords, h=1000, w=1000):
 # ---------------------------------------------------------------------------
 # 1. Cada gesto canonico dispara o seu Map_*
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.parametrize("map_name,coords", list(conftest.ALL_GESTURES.items()))
 def test_gesto_canonico_dispara_seu_map(hands_instance, map_name, coords):
@@ -61,6 +62,7 @@ def test_gesto_canonico_dispara_seu_map(hands_instance, map_name, coords):
 # ---------------------------------------------------------------------------
 # 2. Nao-gesto: pose neutra e default nao disparam nenhum Map_*
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.parametrize("map_name", MAP_NAMES)
 def test_mao_aberta_nao_dispara_nenhum_map(hands_instance, map_name):
@@ -87,11 +89,10 @@ def test_landmarks_default_nao_dispara_nenhum_map(hands_instance, map_name):
 # 3. Exclusividade: matriz completa gesto x Map_*
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.parametrize("gesture_name,coords", list(conftest.ALL_GESTURES.items()))
 @pytest.mark.parametrize("map_name", MAP_NAMES)
-def test_exclusividade_gesto_dispara_apenas_seu_map(
-    hands_instance, gesture_name, coords, map_name
-):
+def test_exclusividade_gesto_dispara_apenas_seu_map(hands_instance, gesture_name, coords, map_name):
     """Cada gesto canonico dispara SO o seu Map_* e nenhum outro.
 
     Produto cartesiano (5 gestos x 5 maps): na diagonal espera-se True; fora
@@ -111,6 +112,7 @@ def test_exclusividade_gesto_dispara_apenas_seu_map(
 # todas as outras condicoes) e mexemos APENAS nos pontos do limite testado,
 # fixando-os em coordenadas que rendem pixels exatos (norm * 1000).
 
+
 class TestThresholdMapOk:
     """Fronteira da distancia polegar(4)-indicador(8) < 0.05*w (=50px @ w=1000)."""
 
@@ -118,7 +120,7 @@ class TestThresholdMapOk:
     def _ok_com_distancia(dist_px):
         # Ancoramos indicador_8 em (450,450) e afastamos polegar_4 no eixo x.
         coords = dict(conftest.GESTURE_OK)
-        coords[INDEX_TIP] = (0.45, 0.45)               # 450, 450
+        coords[INDEX_TIP] = (0.45, 0.45)  # 450, 450
         coords[THUMB_TIP] = ((450 + dist_px) / 1000.0, 0.45)
         return make_hand_landmarks(coords)
 
@@ -145,7 +147,7 @@ class TestThresholdMapPositive:
     def _positive_com_polegar4_y(thumb4_y_px):
         # polegar_1 (idx1) em y=400 -> limite = 400 - 50 = 350.
         coords = dict(conftest.GESTURE_POSITIVE)
-        coords[THUMB_CMC] = (0.50, 0.40)                 # y = 400
+        coords[THUMB_CMC] = (0.50, 0.40)  # y = 400
         coords[THUMB_TIP] = (0.50, thumb4_y_px / 1000.0)
         return make_hand_landmarks(coords)
 
@@ -172,7 +174,7 @@ class TestThresholdMapSpeak:
     def _speak_com_indicador8_y(idx8_y_px):
         # indicador_5 (idx5) em y=400 -> limite = 350.
         coords = dict(conftest.GESTURE_SPEAK)
-        coords[INDEX_MCP] = (0.50, 0.40)                 # y = 400
+        coords[INDEX_MCP] = (0.50, 0.40)  # y = 400
         coords[INDEX_TIP] = (0.50, idx8_y_px / 1000.0)
         return make_hand_landmarks(coords)
 
@@ -199,7 +201,7 @@ class TestThresholdMapSquid:
     def _squid_com_indicador8_y(idx8_y_px):
         # indicador_6 (idx6 = INDEX_PIP) em y=400 -> limite = 350.
         coords = dict(conftest.GESTURE_SQUID)
-        coords[INDEX_PIP] = (0.40, 0.40)                 # y = 400
+        coords[INDEX_PIP] = (0.40, 0.40)  # y = 400
         coords[INDEX_TIP] = (0.40, idx8_y_px / 1000.0)
         return make_hand_landmarks(coords)
 
@@ -226,7 +228,7 @@ class TestThresholdMapRock:
     def _rock_indicador8_y(idx8_y_px):
         # indicador_6 (idx6 = INDEX_PIP) em y=400 -> limite = 350; mindinho ok.
         coords = dict(conftest.GESTURE_ROCK)
-        coords[INDEX_PIP] = (0.30, 0.40)                 # y = 400
+        coords[INDEX_PIP] = (0.30, 0.40)  # y = 400
         coords[INDEX_TIP] = (0.30, idx8_y_px / 1000.0)
         return make_hand_landmarks(coords)
 
@@ -234,7 +236,7 @@ class TestThresholdMapRock:
     def _rock_mindinho20_y(pinky20_y_px):
         # mindinho_18 (idx18 = PINKY_PIP) em y=400 -> limite = 350; indicador ok.
         coords = dict(conftest.GESTURE_ROCK)
-        coords[PINKY_PIP] = (0.70, 0.40)                 # y = 400
+        coords[PINKY_PIP] = (0.70, 0.40)  # y = 400
         coords[PINKY_TIP] = (0.70, pinky20_y_px / 1000.0)
         return make_hand_landmarks(coords)
 
@@ -273,17 +275,18 @@ class TestThresholdMapRock:
 # 5. Calculate_Distance: euclidiana pura
 # ---------------------------------------------------------------------------
 
+
 class TestCalculateDistance:
     """Distancia euclidiana entre dois pontos (x,y)."""
 
     @pytest.mark.parametrize(
         "p1,p2,esperado",
         [
-            ((0, 0), (3, 4), 5.0),     # triangulo 3-4-5 classico
-            ((0, 0), (0, 0), 0.0),     # ponto consigo mesmo
-            ((7, 7), (7, 7), 0.0),     # mesmo ponto fora da origem
-            ((1, 2), (4, 6), 5.0),     # deslocado: dx=3, dy=4
-            ((-3, 0), (0, 4), 5.0),    # coordenadas negativas
+            ((0, 0), (3, 4), 5.0),  # triangulo 3-4-5 classico
+            ((0, 0), (0, 0), 0.0),  # ponto consigo mesmo
+            ((7, 7), (7, 7), 0.0),  # mesmo ponto fora da origem
+            ((1, 2), (4, 6), 5.0),  # deslocado: dx=3, dy=4
+            ((-3, 0), (0, 4), 5.0),  # coordenadas negativas
         ],
     )
     def test_distancia_valores_conhecidos(self, hands_instance, p1, p2, esperado):
@@ -309,6 +312,7 @@ class TestCalculateDistance:
 # 6. Robustez: rescala de h,w e landmarks nas bordas
 # ---------------------------------------------------------------------------
 
+
 class TestRobustez:
     """Geometria deve ser invariante a escala (coords normalizadas) e segura nas bordas."""
 
@@ -327,9 +331,7 @@ class TestRobustez:
 
     @pytest.mark.parametrize("borda", [0.0, 1.0])
     @pytest.mark.parametrize("map_name", MAP_NAMES)
-    def test_landmarks_nas_bordas_nao_levantam_excecao(
-        self, hands_instance, borda, map_name
-    ):
+    def test_landmarks_nas_bordas_nao_levantam_excecao(self, hands_instance, borda, map_name):
         """Todos os 21 pontos em x=y=0.0 ou 1.0 nao podem causar excecao.
 
         Pixels nas bordas (0 ou w/h) sao validos; o codigo nao deve estourar
@@ -341,9 +343,7 @@ class TestRobustez:
         assert getattr(hands_instance, map_name)(1000, 1000, lm, None) is None
 
     @pytest.mark.parametrize("map_name,coords", list(conftest.ALL_GESTURES.items()))
-    def test_gesto_canonico_estavel_entre_chamadas(
-        self, hands_instance, map_name, coords
-    ):
+    def test_gesto_canonico_estavel_entre_chamadas(self, hands_instance, map_name, coords):
         """Map_* e funcao pura dos landmarks: chamar duas vezes da o mesmo True.
 
         Garante ausencia de estado interno mutavel escondido entre frames.

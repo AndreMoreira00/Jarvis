@@ -48,6 +48,7 @@ def _make_act(result):
 # Check_Gesture: gesto comum (foto/voz/imagem), sem controle de gravacao
 # ---------------------------------------------------------------------------
 
+
 def test_dispara_func_exe_quando_gesto_e_mao_batem(control_stub):
     """func_act True + hand_label == side, gesto comum -> func_exe chamada."""
     func_exe = MagicMock(name="func_exe")
@@ -71,6 +72,7 @@ def test_gesto_comum_nao_alterna_gravacao(control_stub):
 # Check_Gesture: gesto de gravacao -> toggle + submete worker so ao INICIAR
 # ---------------------------------------------------------------------------
 
+
 def test_inicio_de_gravacao_dispara_worker(control_stub):
     """controls_recording=True e toggle_recording()->True (iniciou): func_exe roda."""
     control_stub.toggle_recording.return_value = True
@@ -93,6 +95,7 @@ def test_parada_de_gravacao_nao_dispara_worker(control_stub):
 # Check_Gesture: mao errada -> nada acontece
 # ---------------------------------------------------------------------------
 
+
 def test_nao_dispara_quando_mao_diverge(control_stub):
     """Gesto detectado mas em mao diferente de ``side``: nada e disparado."""
     func_exe = MagicMock(name="func_exe")
@@ -112,6 +115,7 @@ def test_mao_diverge_nao_altera_cooldown(control_stub):
 # Check_Gesture: gesto ausente -> nada acontece
 # ---------------------------------------------------------------------------
 
+
 def test_nao_dispara_quando_gesto_ausente(control_stub):
     """func_act False: independentemente da mao, nada e disparado."""
     func_exe = MagicMock(name="func_exe")
@@ -125,6 +129,7 @@ def test_nao_dispara_quando_gesto_ausente(control_stub):
 # Check_Gesture: ordem (cooldown setado ANTES de func_exe)
 # ---------------------------------------------------------------------------
 
+
 def test_seta_cooldown_antes_de_chamar_func_exe(control_stub):
     """Garante que o cooldown ja esta setado no momento em que ``func_exe`` roda."""
     visto = {}
@@ -136,12 +141,15 @@ def test_seta_cooldown_antes_de_chamar_func_exe(control_stub):
     assert visto["cooldown_no_disparo"] == 42
 
 
-@pytest.mark.parametrize("side,hand_label,deve_disparar", [
-    ("Right", "Right", True),
-    ("Left", "Left", True),
-    ("Right", "Left", False),
-    ("Left", "Right", False),
-])
+@pytest.mark.parametrize(
+    "side,hand_label,deve_disparar",
+    [
+        ("Right", "Right", True),
+        ("Left", "Left", True),
+        ("Right", "Left", False),
+        ("Left", "Right", False),
+    ],
+)
 def test_match_de_mao(side, hand_label, deve_disparar, control_stub):
     """Tabela-verdade do match ``hand_label == side`` com gesto sempre presente."""
     func_exe = MagicMock(name="func_exe")
@@ -152,6 +160,7 @@ def test_match_de_mao(side, hand_label, deve_disparar, control_stub):
 # ---------------------------------------------------------------------------
 # init_hands / init_control: helpers async retornam instancias corretas
 # ---------------------------------------------------------------------------
+
 
 async def test_init_hands_retorna_instancia_de_hands():
     """``init_hands`` roda ``hands.Hands`` em executor e devolve a instancia."""
