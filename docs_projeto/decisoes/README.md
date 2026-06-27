@@ -1,0 +1,18 @@
+---
+title: Decisoes do repo template
+type: readme
+status: aprovado
+created: 2026-05-28
+updated: 2026-05-28
+tags: [readme, decisoes]
+---
+
+# Decisoes do repo template
+
+Registro de mudancas estruturais feitas **neste repositorio** (nao nos projetos derivados dele). Cada entrada e uma nota datada com o que mudou e por que.
+
+> Para decisoes tecnicas **dentro de um projeto**, use o template ADR em `docs_Template_Projeto/_templates/ADR_Template.md` (modulo `01_Gestao/Decisoes_Tecnicas/`).
+
+## Indice
+
+- [[2026-05-28_configuracao_obsidian_template]] — configuracao inicial da estrutura Obsidian do template

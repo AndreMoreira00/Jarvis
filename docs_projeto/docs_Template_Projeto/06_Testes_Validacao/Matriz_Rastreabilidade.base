@@ -1,0 +1,185 @@
+filters:
+  and:
+    - project == "_Template_Projeto"
+    - '!file.path.contains("/_templates/")'
+    - or:
+        - 'type == "requisito"'
+        - 'type == "plano-de-teste"'
+        - 'type == "relatorio-de-teste"'
+        - 'type == "simulacao"'
+
+formulas:
+  cobertura_req: 'if(type == "requisito", if(verificado_por && verificado_por.length > 0, "✅ coberto", "❌ órfão"), "")'
+  cobertura_tp: 'if(type == "plano-de-teste", if(requisitos_cobertos && requisitos_cobertos.length > 0, "✅ vincula req", "❌ sem requisito"), "")'
+  cobertura_tr: 'if(type == "relatorio-de-teste", if(plano_referenciado, "✅ vincula TP", "❌ sem TP"), "")'
+  cobertura_sim: 'if(type == "simulacao", if(verifica_requisito && verifica_requisito.length > 0, "✅ vincula req", "❌ sem requisito"), "")'
+
+properties:
+  type:
+    displayName: "Tipo"
+  title:
+    displayName: "Título"
+  categoria:
+    displayName: "Categoria"
+  prioridade:
+    displayName: "Prioridade"
+  verificado_por:
+    displayName: "Verificado por (TPs)"
+  requisitos_cobertos:
+    displayName: "Requisitos cobertos"
+  plano_referenciado:
+    displayName: "Plano referenciado"
+  verifica_requisito:
+    displayName: "Verifica requisito (SIMs)"
+  serie:
+    displayName: "Série"
+  ferramenta:
+    displayName: "Ferramenta"
+  resultado:
+    displayName: "Resultado"
+  executante:
+    displayName: "Executante"
+  data_execucao:
+    displayName: "Data execução"
+  status:
+    displayName: "Status"
+  formula.cobertura_req:
+    displayName: "Cobertura"
+  formula.cobertura_tp:
+    displayName: "Cobertura"
+  formula.cobertura_tr:
+    displayName: "Cobertura"
+  formula.cobertura_sim:
+    displayName: "Cobertura"
+
+views:
+  - type: table
+    name: "❌ Requisitos órfãos (sem TP que verifica)"
+    filters:
+      and:
+        - 'type == "requisito"'
+        - or:
+            - 'verificado_por == null'
+            - 'verificado_por.length == 0'
+    order:
+      - file.name
+      - title
+      - categoria
+      - prioridade
+      - status
+
+  - type: table
+    name: "❌ Planos de teste sem requisito coberto"
+    filters:
+      and:
+        - 'type == "plano-de-teste"'
+        - or:
+            - 'requisitos_cobertos == null'
+            - 'requisitos_cobertos.length == 0'
+    order:
+      - file.name
+      - title
+      - executante
+      - data_execucao
+      - status
+
+  - type: table
+    name: "❌ Relatórios de teste sem plano referenciado"
+    filters:
+      and:
+        - 'type == "relatorio-de-teste"'
+        - 'plano_referenciado == null'
+    order:
+      - file.name
+      - title
+      - resultado
+      - executante
+      - data_execucao
+      - status
+
+  - type: table
+    name: "Cobertura — Requisitos"
+    filters:
+      and:
+        - 'type == "requisito"'
+    order:
+      - file.name
+      - title
+      - categoria
+      - prioridade
+      - formula.cobertura_req
+      - verificado_por
+      - status
+    groupBy:
+      property: categoria
+      direction: ASC
+
+  - type: table
+    name: "Cobertura — Planos de teste"
+    filters:
+      and:
+        - 'type == "plano-de-teste"'
+    order:
+      - file.name
+      - title
+      - formula.cobertura_tp
+      - requisitos_cobertos
+      - executante
+      - data_execucao
+      - status
+
+  - type: table
+    name: "Cobertura — Relatórios de teste"
+    filters:
+      and:
+        - 'type == "relatorio-de-teste"'
+    order:
+      - file.name
+      - title
+      - formula.cobertura_tr
+      - plano_referenciado
+      - resultado
+      - executante
+      - data_execucao
+      - status
+    groupBy:
+      property: resultado
+      direction: ASC
+
+  - type: table
+    name: "❌ Simulações sem requisito vinculado"
+    filters:
+      and:
+        - 'type == "simulacao"'
+        - 'status == "ativo"'
+        - or:
+            - 'verifica_requisito == null'
+            - 'verifica_requisito.length == 0'
+    order:
+      - file.name
+      - title
+      - serie
+      - ferramenta
+      - executante
+      - data_execucao
+      - status
+
+  - type: table
+    name: "Cobertura — Simulações"
+    filters:
+      and:
+        - 'type == "simulacao"'
+    order:
+      - file.name
+      - title
+      - serie
+      - ferramenta
+      - formula.cobertura_sim
+      - verifica_requisito
+      - resultado
+      - executante
+      - data_execucao
+      - status
+    groupBy:
+      property: serie
+      direction: ASC

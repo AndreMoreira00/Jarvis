@@ -1,0 +1,72 @@
+# Documentos Obsoletos — Frente 3 do plano de melhoria de busca
+# Pergunta: Quais documentos foram marcados como obsoletos?
+# Filtra: status == "obsoleto" (cross-módulo)
+#
+# NOTA sobre backlinks_count: A sintaxe Bases atual expõe a lista de
+# backlinks via 'file.inlinks'. Para contagem, usamos 'length(file.inlinks)'
+# em uma fórmula. Caso a versão do Obsidian não suporte, comente a fórmula
+# 'backlinks_count' abaixo — o restante da base continua funcional.
+
+filters:
+  and:
+    - 'status == "obsoleto"'
+
+properties:
+  id:
+    displayName: "ID"
+  title:
+    displayName: "Título"
+  module:
+    displayName: "Módulo"
+  type:
+    displayName: "Tipo"
+  updated:
+    displayName: "Atualizado"
+  revisao:
+    displayName: "Revisão"
+
+formulas:
+  backlinks_count: 'if(file.inlinks, length(file.inlinks), 0)'
+
+views:
+  - type: table
+    name: "Obsoletos (mais recente primeiro)"
+    order:
+      - id
+      - title
+      - module
+      - type
+      - revisao
+      - updated
+      - formula.backlinks_count
+    sort:
+      - property: updated
+        direction: DESC
+
+  - type: table
+    name: "Obsoletos ainda referenciados"
+    filters:
+      and:
+        - 'formula.backlinks_count > 0'
+    order:
+      - id
+      - title
+      - module
+      - type
+      - formula.backlinks_count
+      - updated
+    sort:
+      - property: formula.backlinks_count
+        direction: DESC
+
+  - type: table
+    name: "Por módulo"
+    order:
+      - id
+      - title
+      - type
+      - revisao
+      - updated
+    groupBy:
+      property: module
+      direction: ASC

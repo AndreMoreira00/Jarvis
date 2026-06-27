@@ -1,0 +1,11 @@
+{
+  "attachmentFolderPath": "_assets",
+  "alwaysUpdateLinks": true,
+  "newFileLocation": "folder",
+  "useMarkdownLinks": false,
+  "showLineNumber": true,
+  "readableLineLength": true,
+  "strictLineBreaks": false,
+  "foldHeading": true,
+  "foldIndent": true
+}

@@ -1,0 +1,70 @@
+# Rascunhos Pendentes — Frente 3 do plano de melhoria de busca
+# Pergunta: Quais rascunhos estão parados há mais de 30 dias?
+# Filtra: status == "rascunho" (cross-módulo)
+
+filters:
+  and:
+    - 'status == "rascunho"'
+
+properties:
+  id:
+    displayName: "ID"
+  title:
+    displayName: "Título"
+  module:
+    displayName: "Módulo"
+  type:
+    displayName: "Tipo"
+  updated:
+    displayName: "Atualizado"
+
+formulas:
+  dias_parado: 'if(updated, (today() - date(updated)).days, null)'
+  alerta: 'if(formula.dias_parado != null && formula.dias_parado > 90, "🔴 muito antigo", if(formula.dias_parado != null && formula.dias_parado > 30, "🟡 antigo", "🟢 recente"))'
+
+views:
+  - type: table
+    name: "Todos os rascunhos"
+    order:
+      - id
+      - title
+      - module
+      - type
+      - updated
+      - formula.dias_parado
+      - formula.alerta
+    sort:
+      - property: formula.dias_parado
+        direction: DESC
+
+  - type: table
+    name: "Parados há mais de 30 dias"
+    filters:
+      and:
+        - 'formula.dias_parado > 30'
+    order:
+      - id
+      - title
+      - module
+      - type
+      - updated
+      - formula.dias_parado
+      - formula.alerta
+    sort:
+      - property: formula.dias_parado
+        direction: DESC
+
+  - type: table
+    name: "Por módulo"
+    order:
+      - id
+      - title
+      - type
+      - updated
+      - formula.dias_parado
+    groupBy:
+      property: module
+      direction: ASC
+    sort:
+      - property: formula.dias_parado
+        direction: DESC

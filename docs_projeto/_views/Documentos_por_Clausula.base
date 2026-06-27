@@ -1,0 +1,80 @@
+# Documentos por Cláusula — Frente 3 do plano de melhoria de busca
+# Pergunta: Quais documentos cobrem a cláusula X.X da ISO 9001/17025?
+# Filtra: clause definido (cross-módulo)
+
+filters:
+  and:
+    - 'clause != null'
+    - 'clause != ""'
+
+properties:
+  id:
+    displayName: "ID"
+  title:
+    displayName: "Título"
+  module:
+    displayName: "Módulo"
+  layer:
+    displayName: "Camada"
+  class:
+    displayName: "Classe"
+  standard:
+    displayName: "Norma"
+  clause:
+    displayName: "Cláusula"
+  status:
+    displayName: "Status"
+  updated:
+    displayName: "Atualizado"
+
+views:
+  - type: table
+    name: "Por cláusula"
+    order:
+      - id
+      - title
+      - module
+      - layer
+      - class
+      - standard
+      - clause
+      - status
+      - updated
+    groupBy:
+      property: clause
+      direction: ASC
+    sort:
+      - property: layer
+        direction: ASC
+      - property: id
+        direction: ASC
+
+  - type: table
+    name: "Só ISO 9001"
+    filters:
+      and:
+        - 'standard == "ISO 9001"'
+    order:
+      - id
+      - title
+      - clause
+      - layer
+      - status
+    groupBy:
+      property: clause
+      direction: ASC
+
+  - type: table
+    name: "Só ISO 17025"
+    filters:
+      and:
+        - 'standard == "ISO 17025"'
+    order:
+      - id
+      - title
+      - clause
+      - layer
+      - status
+    groupBy:
+      property: clause
+      direction: ASC

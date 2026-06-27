@@ -1,10 +1,6 @@
-.env
-Video/
-audio/
-Image/
-Response/
-testes_unitarios/
-testes_complexidade/
-docs/
-env/
-midia/
+.claude/settings.local.json
+.obsidian/workspace*.json
+.obsidian/cache
+node_modules/
+.DS_Store
+Thumbs.db

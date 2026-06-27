@@ -1,0 +1,19 @@
+---
+title: Hardware — _Template_Projeto
+area: Hardware
+tags: [readme, template, projeto]
+project: _Template_Projeto
+created: 2026-04-22
+updated: 2026-04-23
+created_by:
+updated_by:
+module: 01_Projetos
+type: readme
+status: aprovado
+---
+
+# Hardware
+
+Eletrônica (BOM, esquemáticos), mecânica, prototipagem.
+
+> Template. Ao duplicar para um novo projeto, substituir `project: _Template_Projeto` pelo nome real e popular as subpastas.
