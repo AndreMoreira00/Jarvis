@@ -3,8 +3,8 @@ from concurrent.futures import ThreadPoolExecutor  # Torna as funções sincrona
 
 import cv2  # Biblioteca que da acessoa câmera
 
-import control  # Importação da classe do Control
-import hands  # Importação da classe do Hands
+from jarvis.core import control  # Importação da classe do Control
+from jarvis.vision import hands  # Importação da classe do Hands
 
 gesture_cooldown = 0
 
@@ -173,5 +173,5 @@ def Check_Gesture(
 #     Dy = 150
 #   return [Dx*2.54, Dy*2.54]
 
-if __name__ == "__main__":  # Verificação de arquivo principal com prioridade de execução
-    asyncio.run(main())  # Execultar a função principal de forma assincrona
+# Entry point: o disparo de `asyncio.run(main())` vive em jarvis/__main__.py
+# (`python -m jarvis`) e no shim main.py da raiz (`python main.py`).

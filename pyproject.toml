@@ -1,3 +1,7 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
 name = "jarvis"
 version = "0.1.0"
@@ -31,10 +35,12 @@ dev = [
     "pytest-cov>=5",
 ]
 
-[tool.uv]
-# Projeto "virtual": uv gerencia deps e lockfile, mas NAO empacota/instala o
-# codigo (modulos ainda na raiz; empacotamento real -> Onda 5, com src/jarvis).
-package = false
+# Onda 5: empacotamento real. O codigo vive em src/jarvis e e um pacote
+# instalavel (build via hatchling). `uv sync`/`pip install -e .` instala em modo
+# editavel, habilitando `python -m jarvis`. Os testes NAO dependem da instalacao
+# (usam pythonpath=["src","scripts"]), entao o CI (pip puro) segue leve.
+[tool.hatch.build.targets.wheel]
+packages = ["src/jarvis"]
 
 # ---------------------------------------------------------------------------
 # Ruff (lint + format) — config gradual: o codigo legado ainda usa PascalCase
@@ -54,7 +60,8 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["B011"]  # asserts e mocks dos testes nao seguem as mesmas regras
-"main.py" = ["B023"]  # lambdas dos checks rodam na mesma iteracao (sem captura tardia); Onda 6
+"src/jarvis/core/loop.py" = ["B023"]  # lambdas dos checks rodam na mesma iteracao (sem captura tardia); Onda 6
+"main.py" = ["E402"]  # shim: ajusta sys.path antes de importar o pacote jarvis
 
 # ---------------------------------------------------------------------------
 # Mypy — modo gradual: libs sem stubs (cv2, mediapipe, edge_tts, pygame...)
@@ -63,28 +70,32 @@ ignore = [
 [tool.mypy]
 python_version = "3.11"
 ignore_missing_imports = true
-files = ["control.py", "main.py", "jarvis.py", "manager.py", "hands.py", "ProjectConfig.py"]
+# mypy_path=src ancora o pacote `jarvis` para resolver imports internos
+# (from jarvis.vision import gestures, etc.) sem instalar o pacote.
+mypy_path = "src"
+files = ["src/jarvis", "scripts/bootstrap.py", "main.py"]
 
 [tool.pytest.ini_options]
-# Raiz do repo no sys.path para os testes importarem hands/control/jarvis/...
-pythonpath = ["."]
+# src/ e scripts/ no sys.path: os testes importam o pacote `jarvis` (de src/) e o
+# `bootstrap` (de scripts/) SEM precisar instalar o pacote -> CI segue com pip puro.
+pythonpath = ["src", "scripts"]
 testpaths = ["tests"]
 # Funcoes async (jarvis/control) viram testes sem decorator explicito.
 asyncio_mode = "auto"
 addopts = "-q --cov --cov-report=term-missing --cov-report=xml"
 
 [tool.coverage.run]
-# Coverage medido apenas sobre o codigo de producao na raiz do repo.
-# source=["."] ancora no diretorio do projeto (exclui site-packages); o omit
-# tira testes, skills do Claude e docs. Sem isso, padroes como "main.py"
-# casariam tambem `_pytest/main.py`/`dotenv/main.py` em site-packages.
-source = ["."]
+# Coverage sobre o pacote (src/jarvis) e o bootstrap (scripts/). O omit tira o
+# entrypoint __main__ (wiring trivial) e ruidos fora do escopo. O shim main.py da
+# raiz fica fora de source, entao nao e medido.
+source = ["src", "scripts"]
 omit = [
     "tests/*",
     ".claude/*",
     "docs_projeto/*",
     "*/site-packages/*",
     "*/scratchpad/*",
+    "*/__main__.py",
 ]
 
 [tool.coverage.report]

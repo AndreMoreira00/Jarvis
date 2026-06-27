@@ -14,7 +14,14 @@ import pytest
 
 def test_modulos_de_producao_importam_sem_libs_pesadas():
     # Se algum stub estiver faltando, o import explode aqui.
-    for nome in ["hands", "control", "jarvis", "manager", "main", "ProjectConfig"]:
+    for nome in [
+        "jarvis.vision.hands",
+        "jarvis.core.control",
+        "jarvis.services.jarvis",
+        "jarvis.services.manager",
+        "jarvis.core.loop",
+        "bootstrap",
+    ]:
         mod = importlib.import_module(nome)
         assert mod is not None
 

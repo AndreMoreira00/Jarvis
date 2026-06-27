@@ -17,7 +17,7 @@ from unittest.mock import AsyncMock, MagicMock, call
 
 import pytest
 
-import jarvis
+from jarvis.services import jarvis
 
 # ---------------------------------------------------------------------------
 # Fixtures

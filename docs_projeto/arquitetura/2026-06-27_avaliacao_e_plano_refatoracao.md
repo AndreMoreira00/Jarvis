@@ -449,11 +449,89 @@ tooling (ambiente tinha uv 0.11 + ruff 0.15; mypy instalado via `uvx`).
 **Verificacao:** `ruff check` limpo, `ruff format --check` ok, `uvx mypy` sem
 problemas, suite **187 passed, 1 xfailed**. Sem `git commit`.
 
+### Onda 4 — concluida (2026-06-27)
+
+**Mudancas:**
+- **`gestures.py`** (novo): funcoes **puras** `is_ok`/`is_positive`/`is_speak`/
+  `is_squid`/`is_rock` — recebem `(h, w, hand_landmarks)` (duck-typed: so precisam
+  de `.landmark[i].x/.y`) e retornam `bool` — mais `distance` (euclidiana via
+  `math.hypot`). Constantes nomeadas dos landmarks + `RAISED_MARGIN`. Tipado com
+  `Protocol` (`Landmark`/`HandLandmarks`), sob mypy. **Geometria identica** aos
+  `Map_*` originais (verificada condicao a condicao).
+- **`hands.py`** reduzido de ~175 para ~40 linhas: virou **wrapper fino**. Os
+  `Map_*` delegam para `gestures.*` preservando a assinatura `(h, w, lm, frame)` e
+  o contrato legado True/None (`return True if pura() else None`). `import math`
+  removido.
+- **`tests/test_gestures.py`** (novo): testa as puras direto (canonico,
+  exclusividade 5x5, pose neutra, default, contrato `bool`, `distance`), reusando
+  os fixtures do conftest.
+- `pyproject.toml`: `gestures.py` adicionado aos `files` do mypy.
+
+**Verificacao:** `ruff check` limpo, `ruff format --check` ok, `uvx mypy` sem
+problemas (7 modulos), suite **237 passed, 1 xfailed** (+50 testes; `test_hands.py`
+segue verde validando o wrapper). Sem `git commit`.
+
+**Nota:** a quirk True/None vive **so no wrapper**. Quando `main.py`/`hands.py`
+forem reestruturados (Onda 5-6), o call-site passa a usar as puras (`bool`) e o
+wrapper + a quirk somem.
+
+### Onda 5 — concluida (2026-06-27)
+
+**Decisoes (via AskUserQuestion):** seguir direto (piv_o de hardware "tres pilares"
+registrado como **risco aceito** — ver nota abaixo); layout **`src/jarvis/`**; **so
+relocacao** (nomes de metodos PascalCase preservados; rename snake_case fica na Onda 6);
+**shim na raiz + `python -m jarvis`**.
+
+**Reestruturacao para pacote em camadas (`src/jarvis/`):**
+
+| Antes (raiz) | Depois |
+|---|---|
+| `gestures.py` | `src/jarvis/vision/gestures.py` |
+| `hands.py` | `src/jarvis/vision/hands.py` |
+| `jarvis.py` | `src/jarvis/services/jarvis.py` |
+| `manager.py` | `src/jarvis/services/manager.py` |
+| `control.py` | `src/jarvis/core/control.py` |
+| `main.py` (loop) | `src/jarvis/core/loop.py` |
+| `ProjectConfig.py` | `scripts/bootstrap.py` |
+
+- **Movimentacao byte-exata** via `git mv` (tracked) / `mv` (gestures, untracked),
+  preservando o conteudo das ondas anteriores; so as **linhas de import interno**
+  foram reescritas para o pacote (`from jarvis.vision import gestures`,
+  `from jarvis.services import jarvis`/`manager`, `from jarvis.core import control`).
+- **Entry points:** `src/jarvis/__main__.py` (`python -m jarvis`, canonico) +
+  **shim `main.py`** na raiz (compat `python main.py`; injeta `src/` no `sys.path`
+  para rodar sem instalar). O `if __name__ == "__main__"` saiu do `loop.py`.
+- **Empacotamento real** (era o plano anotado na Onda 3): `pyproject.toml` ganhou
+  `[build-system]` (hatchling) + `[tool.hatch.build.targets.wheel]`; removido o
+  `[tool.uv] package = false`. `uv lock` regenerado (83 pacotes).
+- **Tooling repontado para o novo layout:** pytest `pythonpath = ["src", "scripts"]`
+  (testes importam o pacote **sem instalar** -> CI com pip puro segue valido);
+  coverage `source = ["src", "scripts"]` + omit `*/__main__.py`; mypy `mypy_path="src"`,
+  `files=["src/jarvis","scripts/bootstrap.py","main.py"]`; ruff per-file-ignore
+  movido (`B023` -> `src/jarvis/core/loop.py`; `E402` -> shim `main.py`).
+- **Testes/conftest:** imports atualizados para o pacote (`from jarvis.* import ...`,
+  `import bootstrap`); `test_main` passou a exercitar `jarvis.core.loop`; `test_smoke`
+  importa os modulos por path dotado. **Logica de teste inalterada** (so imports).
+
+**Verificacao:** `ruff check` limpo, `ruff format --check` ok (22 arquivos),
+`uvx mypy` **Success (13 arquivos)**, suite **237 passed, 1 xfailed**, cobertura
+**91%** (>= gate 85%). Sem `git commit` (working tree + index).
+
+**Nota — risco aceito (piv_o de hardware):** existe um doc paralelo
+[[../decisoes/2026-06-27_arquitetura_tres_pilares|arquitetura tres pilares]] (ESP32-S3
+thin-client + cerebro no celular com VLM on-device). Se o produto pivotar, a estrutura
+`vision/core/services` voltada ao RPi3 pode ser parcialmente descartada. O usuario optou
+por seguir a Onda 5 mesmo assim; **fica o registro** para reavaliar antes da Onda 6.
+
 ## Referencias
 
-- Codigo avaliado: [main.py](../../main.py), [control.py](../../control.py),
-  [jarvis.py](../../jarvis.py), [hands.py](../../hands.py),
-  [manager.py](../../manager.py), [ProjectConfig.py](../../ProjectConfig.py)
+- Codigo avaliado (pos-Onda 5): [loop.py](../../src/jarvis/core/loop.py),
+  [control.py](../../src/jarvis/core/control.py),
+  [jarvis.py](../../src/jarvis/services/jarvis.py),
+  [hands.py](../../src/jarvis/vision/hands.py),
+  [gestures.py](../../src/jarvis/vision/gestures.py),
+  [manager.py](../../src/jarvis/services/manager.py),
+  [bootstrap.py](../../scripts/bootstrap.py)
 - [[../CONVENCOES|Convencoes da documentacao]]
 - Arquitetura Hexagonal (Ports & Adapters), Alistair Cockburn — *a ingerir em
   `referencias/` se virar base de decisao formal*

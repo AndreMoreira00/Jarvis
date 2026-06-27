@@ -3,8 +3,8 @@
 Estrategia: **mock total**. As libs pesadas (mediapipe, cv2, pygame,
 speech_recognition, google-generativeai, edge-tts, google-auth*) NAO precisam
 estar instaladas para rodar os testes. Este conftest injeta stubs em
-``sys.modules`` ANTES de qualquer ``import hands/control/jarvis/manager/main``,
-de modo que o codigo de producao importa os stubs em vez das libs reais.
+``sys.modules`` ANTES de qualquer ``import`` do pacote ``jarvis.*`` (vision/core/
+services), de modo que o codigo de producao importa os stubs em vez das libs reais.
 
 Por que aqui: o pytest importa o ``conftest.py`` da pasta de testes antes dos
 modulos ``test_*.py``. Como os modulos de producao so sao importados dentro dos
@@ -279,6 +279,6 @@ def landmarks_factory():
 @pytest.fixture
 def hands_instance():
     """Instancia real de ``hands.Hands`` (com mediapipe stubado)."""
-    import hands
+    from jarvis.vision import hands
 
     return hands.Hands()

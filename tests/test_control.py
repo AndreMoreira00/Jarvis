@@ -17,7 +17,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-import control as control_mod
+from jarvis.core import control as control_mod
 
 # ---------------------------------------------------------------------------
 # Helpers / Fixtures

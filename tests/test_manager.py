@@ -16,7 +16,7 @@ from unittest.mock import MagicMock, mock_open, patch
 
 import pytest
 
-import manager
+from jarvis.services import manager
 
 # ---------------------------------------------------------------------------
 # Fixtures

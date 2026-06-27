@@ -7,8 +7,10 @@ import cv2  # Biblioteca que da acesso a camera
 import speech_recognition as sr  # Biblioteca para transformar audio em texto
 from pygame import mixer
 
-import jarvis  # Importacao da classe do Jarvis
-import manager
+from jarvis.services import (
+    jarvis,  # Importacao da classe do Jarvis
+    manager,
+)
 
 
 class Control:  # Classe de Controle de funcoes
