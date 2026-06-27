@@ -1,5 +1,6 @@
 import os
 import json
+import mimetypes
 import requests
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -41,10 +42,11 @@ class Manager:
 
     def uploadMidia(self, image_path):
         access_token = self.authorize_credentials()
+        mime_type = mimetypes.guess_type(image_path)[0] or 'application/octet-stream'
         headers = {
             'Authorization': f'Bearer {access_token}',
             'Content-type': 'application/octet-stream',
-            'X-Goog-Upload-Content-Type': 'image/jpeg',
+            'X-Goog-Upload-Content-Type': mime_type,
             'X-Goog-Upload-Protocol': 'raw'
         }
 

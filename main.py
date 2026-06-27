@@ -3,7 +3,6 @@ import control # Importação da classe do Control
 import cv2 # Biblioteca que da acessoa câmera
 import asyncio  # Torna as funções assincronas
 from concurrent.futures import ThreadPoolExecutor # Torna as funções sincronas
-import math
 
 gesture_cooldown = 0
 
@@ -40,24 +39,23 @@ async def main(): # Função de execução principal
                 
                 h, w, _ = frame.shape # Constantes de proporção da camera h = heigth, w = width, _ = canais
                 
+                # (func_exe, func_act, lado_da_mao, cooldown, controla_gravacao)
                 checks = [
-                  # Verificação do gesto de mão OK
-                  (lambda: executor.submit(control_functions.Capture_Photo, frame, executor), lambda: hands_system.Map_Ok(h, w, hand_landmarks, frame), "Right", "Async", 20), # Chamada para o controle tirar uma foto
-                  # Verificação do gesto de mão Positivo
-                  (lambda: executor.submit(control_functions.Capture_Video, cap, executor), lambda: hands_system.Map_Positive(h, w, hand_landmarks, frame), "Left", "Async", 30), # Chamada para o controle gravar um video
-                  # Verificação do gesto de mão Levantar dedo
-                  (lambda: executor.submit(control_functions.Audio_to_Audio, executor), lambda: hands_system.Map_Speak(h, w, hand_landmarks, frame), "Right", "Async", 20), # Chamada para o controle para fazer uma pergunta e agauarda a resposta
-                  # Verificação do gesto de mão Faz o L
-                  (lambda: executor.submit(control_functions.Image_Audio, frame, executor), lambda: hands_system.Map_Squid(h, w, hand_landmarks, frame), "Left", "Async", 20), # Chamada para o controle para fazer uma pergunta, analisar uma imagem e agauardar a resposta
-                  # Verificação do gesto de mão Rock
-                  (lambda: executor.submit(control_functions.Video_Audio, cap, executor), lambda: hands_system.Map_Rock(h, w, hand_landmarks, frame), "Right", "Async", 20), # Chamada para o controle para fazer uma pergunta, analisar um video e agauardar a resposta
+                  # Gesto OK -> tirar foto
+                  (lambda: executor.submit(control_functions.Capture_Photo, frame, executor), lambda: hands_system.Map_Ok(h, w, hand_landmarks, frame), "Right", 20, False),
+                  # Gesto Positivo -> iniciar/parar gravacao de video
+                  (lambda: executor.submit(control_functions.Capture_Video, cap, executor), lambda: hands_system.Map_Positive(h, w, hand_landmarks, frame), "Left", 30, True),
+                  # Gesto Levantar dedo -> pergunta por voz
+                  (lambda: executor.submit(control_functions.Audio_to_Audio, executor), lambda: hands_system.Map_Speak(h, w, hand_landmarks, frame), "Right", 20, False),
+                  # Gesto Faz o L -> foto + pergunta sobre a imagem
+                  (lambda: executor.submit(control_functions.Image_Audio, frame, executor), lambda: hands_system.Map_Squid(h, w, hand_landmarks, frame), "Left", 20, False),
+                  # Gesto Rock -> grava video + pergunta sobre o video
+                  (lambda: executor.submit(control_functions.Video_Audio, cap, executor), lambda: hands_system.Map_Rock(h, w, hand_landmarks, frame), "Right", 20, False),
                 ]
-                
-                # Dx, Dy = calculusNormalDistance(h, w, hand_landmarks)
-                
-                for func_exe, func_act, side, state, cooldown in checks: 
-                  if control_functions.ACTION == False and gesture_cooldown == 0: # and (Dx < 150 or Dy < 150)
-                    await Check_Gesture(func_exe, func_act, side, hand_label, state, cooldown, control_functions)
+
+                for func_exe, func_act, side, cooldown, controls_recording in checks:
+                  if control_functions.ACTION is False and gesture_cooldown == 0:
+                    Check_Gesture(func_exe, func_act, side, hand_label, cooldown, controls_recording, control_functions)
                 
                 # Reduz o cooldown a cada frame
                 if gesture_cooldown > 0:
@@ -85,13 +83,17 @@ async def init_control(): # Função par tornar a iniciação sincrona
     with ThreadPoolExecutor() as executor:
         return await loop.run_in_executor(executor, control.Control)
       
-async def Check_Gesture(func_exe, func_act, side, hand_label, state, cooldown, control_functions):
+def Check_Gesture(func_exe, func_act, side, hand_label, cooldown, controls_recording, control_functions):
   global gesture_cooldown
-  if func_act() and hand_label == side:
-    gesture_cooldown = cooldown
-    if state == "Async":
-      control_functions.Control_Video = not control_functions.Control_Video
+  if not (func_act() and hand_label == side):
+    return
+  gesture_cooldown = cooldown
+  if controls_recording:
+    # Gestos de video alternam a gravacao; so submete o worker ao INICIAR
+    if control_functions.toggle_recording():
       func_exe()
+  else:
+    func_exe()
 
 # def calculusNormalDistance(X, Y, hand_landmarks):
 #   w = 7.87 # 20cm -> 8pl

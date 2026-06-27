@@ -1,8 +1,8 @@
 ---
-title: Avaliacao e plano de refatoracao hexagonal do Jarvis
+title: Avaliacao e plano de refatoracao do Jarvis (camadas simples)
 id: ADR-0001
 type: adr
-status: proposto
+status: aceito
 date: 2026-06-27
 created: 2026-06-27
 updated: 2026-06-27
@@ -11,10 +11,10 @@ deciders: [Andre Moreira]
 tags: [arquitetura, adr, refatoracao, hexagonal, tema/software]
 ---
 
-# Avaliacao e plano de refatoracao hexagonal do Jarvis
+# Avaliacao e plano de refatoracao do Jarvis (camadas simples)
 
-> **Status: proposto.** Este documento e SO o plano — nenhum codigo foi alterado.
-> Aprovar/ajustar antes de iniciar a Onda 1.
+> **Status: aceito.** Este documento e o plano aprovado — nenhum codigo foi
+> alterado ainda. A execucao comeca pela Onda 1.
 
 ## Sumario executivo
 
@@ -26,15 +26,16 @@ modelo de concorrencia fragil (asyncio + ThreadPoolExecutor misturados, com
 **5 defeitos de severidade alta** (concorrencia/bloqueio/segredos) e poluicao de
 repo/dependencias.
 
-- **Decisao tomada pelo dono:** migrar para **arquitetura Hexagonal (Ports &
-  Adapters)**, provedores atras de interfaces, com testes, type hints/lint e
-  config/segredos saneados; empacotamento via `pyproject.toml` + `uv`.
-- **Recomendacao honesta (ver [Advogado do diabo](#parte-4--advogado-do-diabo)):**
-  hexagonal completo provavelmente e **overkill** para um produto de 5 casos de
-  uso num Raspberry Pi 3. O ganho real buscado e **testabilidade**, que se
-  obtem com injecao de dependencia + fakes mesmo sem o cerimonial completo.
-  Sugiro decidir entre o alvo hexagonal puro e um **hexagonal seletivo/parada
-  pragmatica** (Ondas 1-4 + ports so onde paga) antes de executar.
+- **Decisao (2026-06-27):** adotar **arquitetura em camadas simples**
+  (`vision` / `core` / `services`) com **classes concretas** e **injecao por
+  construtor** — testabilidade via fakes (duck typing), **sem `Protocol`/ABC**.
+  Com testes (pytest), type hints + lint (ruff/mypy) e config/segredos saneados;
+  empacotamento via `pyproject.toml` + `uv`.
+- **Por que nao hexagonal puro:** seria **overkill** para 5 casos de uso num
+  Raspberry Pi 3 (ports com implementacao unica = boilerplate; indirecao por
+  frame custa CPU). O ganho real buscado e **testabilidade**, obtida com injecao
+  + fakes sem o cerimonial de ports/adapters. Ver
+  [Advogado do diabo](#parte-4--advogado-do-diabo). Alternativa escolhida: **Alt. 1**.
 
 ---
 
@@ -95,35 +96,41 @@ flowchart TD
 
 ---
 
-## Parte 2 — Arquitetura-alvo (Hexagonal / Ports & Adapters)
+## Parte 2 — Arquitetura-alvo (Camadas simples)
 
-### 2.1 Regra de dependencia
+### 2.1 Principio
 
-`domain  <-  ports  <-  application  <-  adapters`, montados no `composition`.
-O **nucleo** (domain + application) nunca importa `cv2`, `mediapipe`, `genai`,
-`edge_tts`, `pygame` ou `requests`. Toda lib externa vive em `adapters/`.
+Tres camadas, dependencia num unico sentido. **Classes concretas** com
+**injecao por construtor** — sem `Protocol`/ABC. O `core` (orquestracao +
+gestos puros) **nao importa** `cv2`/`mediapipe`/`genai`/`edge_tts`/`pygame`/
+`requests`; recebe as classes de servico ja instanciadas. Testes injetam
+**fakes** por duck typing.
 
 ```mermaid
 flowchart LR
-  subgraph core["Nucleo (testavel sem hardware)"]
-    dom["domain<br/>gestos puros, modelos"]
-    app["application<br/>5 casos de uso + router + loop"]
+  subgraph vision["vision (percepcao)"]
+    cam["Camera (cv2)"]
+    rec["HandRecognizer (mediapipe)"]
+    ges["gestures.py (PURO, testavel)"]
   end
-  ports["ports (Protocols)"]
-  app --> ports
-  ports -. implementado por .-> ad
-  subgraph ad["adapters"]
-    a1["GeminiAdapter"]
-    a2["EdgeTTSAdapter"]
-    a3["GoogleSpeechAdapter"]
-    a4["GooglePhotosAdapter"]
-    a5["OpenCVCamera/MediaStore"]
-    a6["MediaPipeGesture"]
-    a7["PygameAudio"]
+  subgraph core["core (orquestracao, sem libs externas)"]
+    act["actions.py (5 acoes)"]
+    rou["router.py (gesto->acao)"]
+    st["state.py (acao/gravacao)"]
   end
-  comp["composition/bootstrap (DI)"] --> app
-  comp --> ad
-  cfg["config/settings"] --> comp
+  subgraph services["services (IO/provedores)"]
+    gem["GeminiAssistant"]
+    tts["Speech (edge-tts)"]
+    aud["AudioPlayer (pygame)"]
+    sto["MediaStore (cv2)"]
+    pho["GooglePhotos (OAuth)"]
+  end
+  vision --> core
+  services --> core
+  app["app.py (composition + loop)"] --> core
+  app --> services
+  app --> vision
+  cfg["config.py (Settings)"] --> app
 ```
 
 ### 2.2 Arvore de pastas proposta
@@ -141,120 +148,119 @@ jarvis/                              # repo root (pacote instalavel via uv)
 ├── response/                        # runtime (gitignored) — TTS gerado
 ├── midia/                           # runtime (gitignored) — fotos/videos
 ├── src/jarvis/
-│   ├── __main__.py                  # `python -m jarvis` -> bootstrap
-│   ├── domain/                      # nucleo puro, ZERO libs externas
-│   │   ├── models.py                # GestureType, Frame, MediaRef, Question...
-│   │   ├── gestures.py              # ex-Map_* como funcoes puras sobre landmarks
-│   │   └── errors.py
-│   ├── ports/                       # interfaces (typing.Protocol)
-│   │   ├── llm_provider.py  speech_to_text.py  text_to_speech.py
-│   │   ├── media_uploader.py  camera_source.py  audio_player.py
-│   │   └── gesture_recognizer.py  media_store.py
-│   ├── application/
-│   │   ├── use_cases/               # take_photo, record_video, ask_assistant,
-│   │   │                            #   analyze_image, analyze_video
-│   │   ├── services/                # gesture_router, action_lock
-│   │   └── frame_loop.py            # ex-while cap.isOpened()
-│   ├── adapters/
-│   │   ├── llm/gemini_adapter.py    stt/google_speech_adapter.py
-│   │   ├── tts/edge_tts_adapter.py  uploader/google_photos_adapter.py
-│   │   ├── camera/opencv_camera_adapter.py  audio/pygame_audio_adapter.py
-│   │   ├── gesture/mediapipe_gesture_adapter.py
-│   │   └── storage/opencv_media_store.py
-│   ├── config/settings.py           # pydantic-settings (SecretStr p/ chave)
-│   └── composition/bootstrap.py     # build_app(): DI explicita
-└── tests/                           # pytest, sem hardware (fakes por port)
-    ├── conftest.py  fakes/  unit/  integration/
+│   ├── __main__.py                  # `python -m jarvis` -> app.run()
+│   ├── app.py                       # composition: instancia tudo, injeta, roda o loop
+│   ├── config.py                    # Settings (pydantic-settings; SecretStr p/ chave)
+│   ├── vision/                      # PERCEPCAO (entrada)
+│   │   ├── camera.py                # Camera (wrapper cv2.VideoCapture)
+│   │   ├── recognizer.py            # HandRecognizer (MediaPipe -> landmarks)
+│   │   └── gestures.py              # funcoes PURAS (ex-Map_*), zero libs externas
+│   ├── core/                        # ORQUESTRACAO (regra de negocio)
+│   │   ├── actions.py               # 5 acoes (foto, video, perguntar, imagem, video+IA)
+│   │   ├── router.py                # gesto+mao+cooldown -> acao (ex-checks/Check_Gesture)
+│   │   └── state.py                 # estado de acao/gravacao (substitui flags globais)
+│   └── services/                    # IO / PROVEDORES (as libs vivem aqui)
+│       ├── assistant.py             # GeminiAssistant (Gemini multimodal)
+│       ├── tts.py                   # Speech (edge-tts synthesize)
+│       ├── audio.py                 # AudioPlayer (pygame)
+│       ├── store.py                 # MediaStore (imwrite/VideoWriter, delete)
+│       └── photos.py                # GooglePhotos (upload OAuth)
+└── tests/                           # pytest, sem hardware (fakes injetados)
+    ├── conftest.py  fakes.py
+    ├── test_gestures.py
+    └── test_actions.py
 ```
 
-### 2.3 Camadas
+### 2.3 Camadas (3)
 
-| Camada | Responsabilidade | Depende de |
-|--------|------------------|------------|
-| `domain` | Modelos + regras puras (classificacao de gesto sobre landmarks). Sem I/O. | nada |
-| `ports` | Contratos `Protocol` que o app exige | domain (tipos) |
-| `application` | 5 casos de uso, `gesture_router` (ex-`Check_Gesture`), `frame_loop`, `action_lock` | domain + ports |
-| `adapters` | Implementacoes concretas com as libs externas; isola async/bloqueio aqui | ports + domain |
-| `config` | `Settings` tipado lendo `.env`/env | — |
-| `composition` | Composition root: instancia adapters, injeta nos use cases | tudo |
+| Camada | Responsabilidade | Importa |
+|--------|------------------|---------|
+| `vision` | Perceber: camera, reconhecedor de maos, **classificacao pura de gestos**. `gestures.py` e puro (so matematica sobre landmarks). | `cv2`/`mediapipe` so em `camera.py`/`recognizer.py`; `gestures.py` nada |
+| `core` | Orquestrar: as 5 acoes, `router` (gesto->acao), `state` (acao/gravacao). | so `vision` (tipos) + servicos **injetados**. **Nunca** `cv2`/`genai`/`pygame` |
+| `services` | Falar com o mundo: Gemini, edge-tts, pygame, Google Photos, disco. Encapsula tambem o `run_in_executor` do que e bloqueante. | as libs externas |
 
-### 2.4 Ports (interfaces)
+`app.py` (composition) instancia `services` + `vision`, injeta no `core` e roda
+o loop. E o **unico** lugar que conhece as tres camadas.
 
-| Port | Metodos (essenciais) | Substitui |
-|------|----------------------|-----------|
-| `LLMProvider` | `generate_text`, `generate_from_image`, `generate_from_video` | jarvis.py 71-103 |
-| `SpeechToText` | `transcribe(language, timeout, phrase_limit) -> str` | control.py 60-84 |
-| `TextToSpeech` | `synthesize(text, out_path) -> MediaRef` | jarvis.py 51-67 |
-| `AudioPlayer` | `play_and_wait(media)` | play+sleep espalhado |
-| `MediaUploader` | `upload(media) -> str` | manager.py |
-| `CameraSource` | `read() -> Frame \| None`, `release()`, context manager | cv2.VideoCapture |
-| `GestureRecognizer` | `detect(frame) -> list[HandObservation]` | hands.process |
-| `MediaStore` | `save_photo`, `record_video`, `delete` | cv2.imwrite/VideoWriter + Recycle_midia |
+### 2.4 Injecao por construtor, sem Protocol
 
-### 2.5 Adapters
+```python
+# core/actions.py — recebe instancias concretas, nao cria nada
+class Actions:
+    def __init__(self, store, photos, assistant, tts, player, state):
+        self._store, self._photos = store, photos
+        self._assistant, self._tts, self._player = assistant, tts, player
+        self._state = state
+```
 
-`GeminiAdapter` (google-generativeai), `GoogleSpeechAdapter` (SpeechRecognition),
-`EdgeTTSAdapter` (edge-tts), `GooglePhotosAdapter` (OAuth+requests),
-`OpenCVCameraAdapter` + `OpenCVMediaStore` (cv2), `PygameAudioAdapter` (pygame),
-`MediaPipeGestureAdapter` (mediapipe). Cada um encapsula o `run_in_executor` das
-chamadas bloqueantes — a concorrencia some do nucleo.
+Nos testes, `Actions(FakeStore(), FakePhotos(), FakeAssistant(), ...)` — duck
+typing, sem `Protocol`/ABC. Type hints usam as classes concretas reais; mypy
+valida o wiring no `app.py`. Ganha-se ~80% da testabilidade do hexagonal com
+metade dos arquivos.
 
-### 2.6 Composition root
+### 2.5 Classes de servico
 
-`src/jarvis/composition/bootstrap.py::build_app(settings)` e o **unico** ponto
-que conhece todas as camadas: le `Settings`, instancia os adapters concretos,
-injeta-os nos use cases (construtor recebe **interfaces**, nunca cria adapters),
-monta o `GestureRouter` + `ActionLock` (substitui flags globais `ACTION`/
-`Control_Video`) e o `FrameLoop`. `__main__.py` chama `asyncio.run(app.run())`.
+`GeminiAssistant` (texto/imagem/video), `Speech` (edge-tts synthesize),
+`AudioPlayer` (pygame play_and_wait), `MediaStore` (save_photo/record_video/
+delete), `GooglePhotos` (upload OAuth). Cada uma e uma classe concreta coesa;
+a concorrencia bloqueante (`run_in_executor`/polling) fica encapsulada aqui,
+fora do `core`.
 
-### 2.7 Config e segredos
+### 2.6 Config e segredos
 
-`pydantic-settings` (`BaseSettings`) — leve para o RPi3. `gemini_api_key:
-SecretStr` (obrigatorio), modelo/voz/thresholds/fps/cooldowns/paths com defaults.
-OAuth movido para `secrets/` (gitignored), caminhos via `Settings`. Dirs de
-runtime criados de forma **idempotente** (`mkdir(parents=True, exist_ok=True)`)
-no bootstrap — fim do `ProjectConfig.py` quebrado.
+`pydantic-settings` (`BaseSettings`) em `config.py` — leve para o RPi3.
+`gemini_api_key: SecretStr` (obrigatorio), modelo/voz/thresholds/fps/cooldowns/
+paths com defaults. OAuth movido para `secrets/` (gitignored), caminhos via
+`Settings`. Dirs de runtime criados de forma **idempotente**
+(`mkdir(parents=True, exist_ok=True)`) no `app.py` — fim do `ProjectConfig.py`
+quebrado.
 
-### 2.8 Mapeamento DE -> PARA (resumo)
+### 2.7 Mapeamento DE -> PARA (resumo)
 
 | De (hoje) | Para (alvo) |
 |-----------|-------------|
-| `main.py` loop while | `application/frame_loop.py` |
-| `main.py` checks + `Check_Gesture` | `application/services/gesture_router.py` |
-| `hands.py` `Map_*` | `domain/gestures.py` (puras) |
-| `control.py` Capture_Photo/Video/Audio | use cases + `MediaStore`/`SpeechToText` adapters |
-| `control.py` flags ACTION/Control_Video | `application/services/action_lock.py` |
-| `jarvis.py` (Gemini+TTS+play) | `LLMProvider` + `TextToSpeech` + `AudioPlayer` adapters |
-| `manager.py` (Photos) | `adapters/uploader/google_photos_adapter.py` |
-| `ProjectConfig.py` | `config/settings.py` + bootstrap idempotente |
+| `main.py` loop while | `app.py` (loop) |
+| `main.py` checks + `Check_Gesture` + `gesture_cooldown` | `core/router.py` + `core/state.py` |
+| `hands.py` `Map_*` | `vision/gestures.py` (puras) |
+| `hands.py` Hands (mediapipe) | `vision/recognizer.py` |
+| `main.py` cv2.VideoCapture | `vision/camera.py` |
+| `control.py` Capture_Photo/Video | `core/actions.py` + `services/store.py` |
+| `control.py` Capture_Audio | `services/` (transcricao) |
+| `control.py` flags ACTION/Control_Video | `core/state.py` |
+| `jarvis.py` Gemini | `services/assistant.py` |
+| `jarvis.py` Translate (edge-tts) | `services/tts.py` |
+| `jarvis.py`/`control.py` play+sleep | `services/audio.py` (AudioPlayer) |
+| `manager.py` (Photos) | `services/photos.py` |
+| `ProjectConfig.py` | `config.py` + criacao idempotente no `app.py` |
 | `requirements.txt` | `pyproject.toml` + `uv.lock` (saneado) |
 | `audios_check/` | `assets/sounds/` |
 | `./env/*.json` | `secrets/*.json` (gitignored) |
 
 ---
 
-## Parte 3 — Plano de refatoracao (10 ondas)
+## Parte 3 — Plano de refatoracao (7 ondas)
 
 **Racional:** reduzir risco antes de reestruturar. Ondas 1-2 estabilizam (bugs,
 concorrencia, segredos) **sem** mexer na arquitetura. Onda 3 instala a rede de
 testes **antes** de mover codigo. Onda 4 extrai logica pura (alto valor, baixo
-risco). Ondas 5-8 introduzem ports/adapters um dominio por vez (padrao
-*strangler fig*: o adapter envolve o codigo legado, preservando paridade). Onda 9
-troca o nucleo. Onda 10 limpa e endurece. Cada onda e revertivel via `git` e
-validavel **sem hardware** (fakes nos ports).
+risco). Onda 5 reorganiza em pacote/camadas movendo o codigo com paridade. Onda 6
+centraliza config, monta o `app.py` (composition) e resolve a fronteira async/
+sync de vez, removendo a classe-Deus `Control`. Onda 7 limpa e endurece. Cada
+onda e revertivel via `git` e validavel **sem hardware** (fakes injetados).
 
 | Onda | Nome | Entrega | Risco |
 |------|------|---------|-------|
 | 1 | Estabilizar dores criticas | Bug Video_Audio, asyncio.run/sleep, toggle Control_Video, Recycle_midia | Medio-alto |
 | 2 | Saneamento | `.gitignore` segredos, requirements limpo, `.env.example`, ProjectConfig idempotente | Baixo |
 | 3 | Tooling (rede de seguranca) | `pyproject`+`uv`, ruff, mypy, pytest + smoke | Baixo-medio |
-| 4 | Dominio puro | `Map_*` -> funcoes puras testadas | Baixo |
-| 5 | Port de config | `Settings` tipado, injetado | Baixo |
-| 6 | Ports LLM + TTS + AudioPlayer | Gemini/edge-tts atras de ports + fakes | Medio |
-| 7 | Port de storage | Google Photos atras de port + fake | Baixo-medio |
-| 8 | Ports camera + microfone | OpenCV/SpeechRecognition atras de ports + fakes | Medio |
-| 9 | Nucleo hexagonal | 5 use cases + DI + composition root + loop; remove `Control` | **Alto** |
-| 10 | Finalizacao | Remove legado, mypy estrito, docs, smoke em RPi3 | Baixo (codigo) |
+| 4 | Gestos puros | `Map_*` -> `vision/gestures.py` puras + testes | Baixo |
+| 5 | Pacote em camadas | criar `src/jarvis`, mover codigo p/ `vision`/`core`/`services` (classes concretas), paridade | Medio-alto |
+| 6 | Config + composition + async | `config.py` + `app.py`; fronteira async/sync resolvida; remove `Control` | Medio-alto |
+| 7 | Finalizacao | Remove legado, mypy estrito, docs, smoke em RPi3 | Baixo (codigo) |
+
+> **Resiliencia (em aberto):** ver [Parte 5](#parte-5--resiliencia-supervisao-e-reinicio)
+> — decidir se entra uma camada de supervisao/watchdog (isolar falha + reiniciar)
+> e em qual onda (provavelmente 6 e 7).
 
 ### Detalhe — Onda 1 (as dores prioritarias)
 
@@ -268,8 +274,8 @@ validavel **sem hardware** (fakes nos ports).
 > Cada correcao em **commit atomico** para rollback granular. Checkpoint: import
 > sem erro + revisao linha-a-linha + smoke com hardware se disponivel.
 
-*(Ondas 2-10 detalhadas na versao completa da analise; cada uma tem objetivo,
-passos, arquivos, checkpoint de teste, risco e rollback.)*
+*(Ondas 2-7 detalhadas na execucao; cada uma tem objetivo, passos, arquivos,
+checkpoint de teste, risco e rollback.)*
 
 ---
 
@@ -306,18 +312,86 @@ passos, arquivos, checkpoint de teste, risco e rollback.)*
   (onde testar sem rede e claramente valioso e uma troca de provedor e
   plausivel); camera/mic/storage ficam adapters concretos simples.
 
-**Recomendacao:** comecar pelas **Ondas 1-3 de qualquer jeito** (sao consenso
-entre todas as alternativas) e so entao decidir entre hexagonal puro (Ondas
-5-9) e hexagonal seletivo (Alt. 3). A decisao nao precisa ser tomada agora.
+**Decisao (2026-06-27): adotada a Alt. 1 — Camadas simples.** Melhor
+custo-beneficio para o escopo; entrega a testabilidade desejada sem o boilerplate
+de ports/adapters. As Ondas 1-3 sao consenso e comecam ja; a reestruturacao em
+camadas vem nas Ondas 5-6.
 
 ---
 
-## Decisao pendente / proximos passos
+## Parte 5 — Resiliencia, supervisao e reinicio
 
-1. **Aprovar o alvo**: hexagonal puro vs. seletivo (Alt. 3) vs. parada
-   pragmatica (Alt. 2).
-2. Autorizar inicio da **Onda 1** (correcao de bugs) — independe da escolha acima.
-3. Apos cada onda, atualizar este doc e abrir ADR especifico se houver desvio.
+> Levantado pelo dono (2026-06-27): "uma arquitetura que separa em camadas e isola
+> o menor nucleo, e quando da problema o nucleo fica isolado e reinicia o sistema".
+
+**O que e:** isso descreve **Microkernel (Plugin)** + **arvores de supervisao**
+("let it crash", estilo Erlang/OTP / actor model). O nucleo minimo fica estavel e
+isolado; falhas em componentes nao o derrubam; um supervisor **reinicia** o que
+falhou (ou o processo todo) para um estado conhecido.
+
+**Decisao:** **nao** adotar o estilo completo (microkernel/actor) — overkill e
+contra a natureza do Python (sem processos verdes baratos; GIL). **Adotar so a
+parte de resiliencia** que importa para um device sempre-ligado, como camada
+fina sobre as camadas simples:
+
+- **Isolamento por acao (bulkhead):** cada acao do `core` roda em `try/except`;
+  uma falha (Gemini fora, mic ocupado) **nao mata o loop** de captura.
+- **Supervisao de subsistemas:** `app.py` reinicia camera/recognizer em caso de
+  falha de hardware, sem reiniciar o processo todo.
+- **Watchdog de processo:** `systemd` com `Restart=always` (ou supervisor minimo)
+  reinicia o processo se ele morrer — o "reinicia o sistema" de forma trivial e
+  robusta, sem reinventar OTP.
+- **Opcional:** *circuit breaker* nas chamadas de rede (Gemini/Photos) para nao
+  martelar um servico fora do ar.
+
+**Onde entra no plano:** isolamento por acao + supervisao de subsistemas na
+**Onda 6** (ao montar `app.py`/`state`); watchdog `systemd` + circuit breaker na
+**Onda 7** (finalizacao/deploy no RPi3).
+
+---
+
+## Decisao tomada / proximos passos
+
+1. **Alvo aprovado:** camadas simples (Alt. 1) + camada fina de resiliencia
+   (Parte 5).
+2. Autorizar inicio da **Onda 1** (correcao de bugs) — independe do resto.
+3. Apos cada onda, atualizar este doc; abrir ADR especifico se houver desvio.
+
+## Registro de execucao
+
+### Onda 1 — concluida (2026-06-27, working tree, sem commit)
+
+**Decisoes aplicadas:** concorrencia "minimo seguro"; gravacao via
+`threading.Event`; escopo: 4 nucleos + bonus (mime/erro do mic); Python 3.11+;
+validacao estatica + suite pytest.
+
+**Mudancas no codigo:**
+- `control.py`: helper `_run` (1 event loop reutilizavel por thread) substitui
+  `asyncio.run` nos workers; `play_confirmation_sound` agora **sincrono**;
+  `Capture_Video` usa `_recording` (Event) com respiro no loop (fim do busy-loop
+  a 100% CPU); `Capture_Audio` retorna `None` em falha (antes strings de erro
+  viravam prompt); `Audio/Image/Video_Audio` capturam audio direto e so
+  consultam o Jarvis se houver prompt; **bug do `Video_Audio` corrigido**
+  (`Capture_Audio` recebe `executor`); `ACTION` setado no inicio.
+- `main.py`: `Check_Gesture` agora **sincrono**; toggle de gravacao **so para
+  gestos de video** (via `toggle_recording()`), e so submete o worker ao
+  INICIAR; removido `import math`.
+- `jarvis.py`: `Video_To_Text` troca `time.sleep(10)` por
+  `await asyncio.sleep(backoff)` (a "Bomba"); removido `import time`.
+- `manager.py`: `uploadMidia` deriva o mime via `mimetypes` — fim do `.avi`
+  enviado como `image/jpeg`.
+
+**Testes:** ja havia uma suite (criada em paralelo; equivale a parte da Onda 3 —
+`pyproject.toml` com pytest+coverage, `asyncio_mode=auto`, conftest com mock
+total das libs). Ela codificava o comportamento antigo (e marcava os bugs como
+`xfail`). Atualizada ao contrato corrigido em `tests/test_main.py`,
+`tests/test_control.py` e no fixture de sleep de `tests/test_jarvis.py`.
+**Resultado: 187 passed, 1 xfailed.** Cobertura: control/jarvis/manager 100%;
+`main.py` 45% (o loop de camera nao e testavel sem hardware).
+
+**Deferido:** `Recycle_midia` (codigo morto, declarado sem `self`) ficou fora —
+nao estava no escopo selecionado; permanece `xfail`. Saneamento de
+segredos/requirements (Onda 2) e a reestruturacao em camadas (Onda 5-6) seguem.
 
 ## Referencias
 

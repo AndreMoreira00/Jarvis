@@ -1,17 +1,15 @@
 """Testes da classe ``Control`` (control.py): orquestracao das acoes do Jarvis.
 
-Foco: testar O NOSSO codigo (fluxo de captura, encadeamento de futures,
-controle da trava ``ACTION``, nomes de arquivo por timestamp e tratamento de
-erros do reconhecimento de voz), nao as libs stubadas (cv2, pygame, sr).
+Foco: testar O NOSSO codigo (fluxo de captura, encadeamento de futures, trava
+``ACTION``, estado de gravacao via ``threading.Event``, nomes por timestamp e
+tratamento de erros do reconhecimento de voz), nao as libs stubadas.
 
-Estrategia de isolamento da rede/IA:
+Isolamento da rede/IA:
 - Apos criar ``Control()``, substituimos ``jarvis_system`` e ``menager_system``
-  por mocks. Os metodos do jarvis sao corrotinas (chamados via ``asyncio.run``),
-  entao usamos ``AsyncMock``; o manager so recebe ``executor.submit(...)`` e pode
-  ser ``MagicMock``.
-- ``mixer`` vem do stub MagicMock do pygame. ``Sound(...).get_length()`` por
-  padrao devolveria um MagicMock (que quebraria ``asyncio.sleep``), entao
-  configuramos ``return_value`` para um numero em cada teste que toca som.
+  por mocks. Os metodos do jarvis sao corrotinas (rodadas via ``self._run`` =
+  run_until_complete num loop por thread), entao usamos ``AsyncMock``.
+- ``mixer`` vem do stub MagicMock do pygame; ``play_confirmation_sound`` agora e
+  SINCRONO e usa ``time.sleep(get_length())``, entao fixamos get_length em 0.0.
 """
 
 from concurrent.futures import Future
@@ -27,11 +25,7 @@ import control as control_mod
 # ---------------------------------------------------------------------------
 
 def _make_future(value):
-    """Cria um ``concurrent.futures.Future`` ja resolvido com ``value``.
-
-    Util para simular o resultado de ``executor.submit(...).result()`` sem
-    rodar nada em outra thread.
-    """
+    """Cria um ``concurrent.futures.Future`` ja resolvido com ``value``."""
     fut = Future()
     fut.set_result(value)
     return fut
@@ -39,41 +33,25 @@ def _make_future(value):
 
 @pytest.fixture
 def control_instance():
-    """Instancia de ``Control`` com jarvis e manager mockados.
-
-    ``mixer.init()`` e ``mixer.Sound`` vem do stub MagicMock do pygame, entao a
-    construcao nao toca em hardware. Trocamos as dependencias internas por mocks
-    para isolar a orquestracao da rede/IA.
-    """
+    """Instancia de ``Control`` com jarvis e manager mockados."""
     ctrl = control_mod.Control()
-    # jarvis: metodos async -> AsyncMock para casar com asyncio.run(...)
     ctrl.jarvis_system = MagicMock(name="jarvis_system")
     ctrl.jarvis_system.Text_To_Text = AsyncMock(name="Text_To_Text")
     ctrl.jarvis_system.Image_To_Text = AsyncMock(name="Image_To_Text")
     ctrl.jarvis_system.Video_To_Text = AsyncMock(name="Video_To_Text")
-    # manager: so recebe submit(uploadMidia, ...), nao precisa ser async
     ctrl.menager_system = MagicMock(name="menager_system")
     return ctrl
 
 
 @pytest.fixture(autouse=True)
 def sound_length_zero():
-    """Garante que ``mixer.Sound(...).get_length()`` devolva numero (0.0).
-
-    O stub do pygame e MagicMock; sem isso ``await asyncio.sleep(get_length())``
-    receberia um MagicMock e estouraria. Configuramos no objeto ``mixer`` que o
-    modulo ``control`` realmente usa (``from pygame import mixer``).
-    """
+    """``mixer.Sound(...).get_length()`` -> 0.0 (alimenta time.sleep do som)."""
     control_mod.mixer.Sound.return_value.get_length.return_value = 0.0
     yield
 
 
 class _ImmediateExecutor:
-    """Executor falso: roda ``fn`` na hora e devolve um Future ja resolvido.
-
-    Reproduz o contrato de ``ThreadPoolExecutor.submit(...).result()`` sem usar
-    threads, deixando os testes deterministicos.
-    """
+    """Executor falso: roda ``fn`` na hora e devolve um Future ja resolvido."""
 
     def __init__(self):
         self.calls = []
@@ -96,10 +74,10 @@ class _ImmediateExecutor:
 class TestInit:
     """Estado inicial e efeitos colaterais do construtor."""
 
-    def test_flags_de_controle_iniciam_false(self, control_instance):
-        """ACTION e Control_Video comecam desligadas (nenhuma acao em curso)."""
+    def test_estado_inicial_desligado(self, control_instance):
+        """ACTION desligado e nenhuma gravacao em curso no inicio."""
         assert control_instance.ACTION is False
-        assert control_instance.Control_Video is False
+        assert control_instance.is_recording() is False
 
     def test_mixer_init_chamado_na_construcao(self):
         """O servico de audio do pygame deve ser inicializado no __init__."""
@@ -118,7 +96,6 @@ class TestInit:
         for caminho in sons:
             assert caminho.startswith("audios_check/")
             assert caminho.endswith(".wav")
-        # nomes nao podem colidir entre si
         assert len(set(sons)) == 4
 
     def test_subsistemas_jarvis_e_manager_instanciados(self):
@@ -129,18 +106,34 @@ class TestInit:
 
 
 # ---------------------------------------------------------------------------
-# 2. play_confirmation_sound (async)
+# 2. toggle_recording / is_recording (Event substitui a antiga flag Control_Video)
+# ---------------------------------------------------------------------------
+
+class TestToggleRecording:
+    """Estado de gravacao via threading.Event."""
+
+    def test_toggle_liga_e_desliga(self, control_instance):
+        """toggle alterna o Event e o retorno reflete o novo estado."""
+        assert control_instance.is_recording() is False
+        assert control_instance.toggle_recording() is True   # passou a gravar
+        assert control_instance.is_recording() is True
+        assert control_instance.toggle_recording() is False  # parou
+        assert control_instance.is_recording() is False
+
+
+# ---------------------------------------------------------------------------
+# 3. play_confirmation_sound (agora sincrono)
 # ---------------------------------------------------------------------------
 
 class TestPlayConfirmationSound:
-    """Reproducao de som de confirmacao (corrotina)."""
+    """Reproducao sincrona de som de confirmacao."""
 
-    async def test_toca_e_para_o_som(self, control_instance):
+    def test_toca_e_para_o_som(self, control_instance):
         """play() e stop() sao chamados; get_length alimenta o sleep."""
         sound_obj = MagicMock(name="sound")
         sound_obj.get_length.return_value = 0.0
         with patch.object(control_mod.mixer, "Sound", return_value=sound_obj) as mk_sound:
-            await control_instance.play_confirmation_sound("audios_check/x.wav")
+            control_instance.play_confirmation_sound("audios_check/x.wav")
 
         mk_sound.assert_called_once_with("audios_check/x.wav")
         sound_obj.play.assert_called_once()
@@ -149,7 +142,7 @@ class TestPlayConfirmationSound:
 
 
 # ---------------------------------------------------------------------------
-# 3. Capture_Photo
+# 4. Capture_Photo
 # ---------------------------------------------------------------------------
 
 class TestCapturePhoto:
@@ -170,27 +163,26 @@ class TestCapturePhoto:
         )
 
     def test_toca_som_de_foto(self, control_instance, fake_frame):
-        """O som de confirmacao usado e o photo_take_sound."""
+        """O som de confirmacao usado e o photo_take_sound (chamada sincrona)."""
         executor = MagicMock(name="executor")
         with patch.object(control_mod, "cv2"), \
-             patch.object(control_instance, "play_confirmation_sound", new=AsyncMock()) as mk_play:
+             patch.object(control_instance, "play_confirmation_sound") as mk_play:
             control_instance.Capture_Photo(fake_frame, executor)
-        mk_play.assert_awaited_once_with(control_instance.photo_take_sound)
+        mk_play.assert_called_once_with(control_instance.photo_take_sound)
 
 
 # ---------------------------------------------------------------------------
-# 4. Capture_Video
+# 5. Capture_Video (controlado pelo Event _recording)
 # ---------------------------------------------------------------------------
 
 class TestCaptureVideo:
-    """Gravacao de video controlada por Control_Video."""
+    """Gravacao de video controlada por ``_recording`` (threading.Event)."""
 
     def test_sem_gravar_nao_entra_no_loop_mas_finaliza(self, control_instance):
-        """Control_Video=False: o while nao roda; VideoWriter criado e released; retorna .avi."""
+        """_recording desligado: o while nao roda; VideoWriter criado e released."""
         cap = MagicMock(name="cap")
         executor = MagicMock(name="executor")
         out = MagicMock(name="out")
-        control_instance.Control_Video = False
         with patch.object(control_mod, "cv2") as mk_cv2, \
              patch.object(control_mod.time, "strftime", return_value="20260627_120000"):
             mk_cv2.VideoWriter.return_value = out
@@ -200,7 +192,6 @@ class TestCaptureVideo:
         assert caminho == esperado
         mk_cv2.VideoWriter.assert_called_once()
         out.release.assert_called_once()
-        # while nao executou -> nenhum frame escrito e nenhum read
         out.write.assert_not_called()
         cap.read.assert_not_called()
         executor.submit.assert_called_once_with(
@@ -208,23 +199,24 @@ class TestCaptureVideo:
         )
 
     def test_uma_iteracao_grava_um_frame(self, control_instance):
-        """Com Control_Video ligado e desligado no 1o read, grava exatamente 1 frame."""
+        """Com _recording ligado e desligado no 1o read, grava exatamente 1 frame."""
         cap = MagicMock(name="cap")
         executor = MagicMock(name="executor")
         out = MagicMock(name="out")
         frame_obj = MagicMock(name="frame")
 
-        control_instance.Control_Video = True
+        control_instance._recording.set()
 
         def read_then_stop():
             # desliga apos a 1a leitura -> o while encerra na proxima checagem
-            control_instance.Control_Video = False
+            control_instance._recording.clear()
             return True, frame_obj
 
         cap.read.side_effect = read_then_stop
 
         with patch.object(control_mod, "cv2") as mk_cv2, \
-             patch.object(control_mod.time, "strftime", return_value="20260627_120000"):
+             patch.object(control_mod.time, "strftime", return_value="20260627_120000"), \
+             patch.object(control_mod.time, "sleep"):
             mk_cv2.VideoWriter.return_value = out
             caminho = control_instance.Capture_Video(cap, executor)
 
@@ -233,9 +225,28 @@ class TestCaptureVideo:
         out.write.assert_called_once_with(frame_obj)
         out.release.assert_called_once()
 
+    def test_read_sem_sucesso_encerra_gravacao(self, control_instance):
+        """Se cap.read() falha (status False), a gravacao para sem escrever frame."""
+        cap = MagicMock(name="cap")
+        executor = MagicMock(name="executor")
+        out = MagicMock(name="out")
+
+        control_instance._recording.set()
+        cap.read.return_value = (False, None)  # camera falhou
+
+        with patch.object(control_mod, "cv2") as mk_cv2, \
+             patch.object(control_mod.time, "strftime", return_value="20260627_120000"), \
+             patch.object(control_mod.time, "sleep"):
+            mk_cv2.VideoWriter.return_value = out
+            control_instance.Capture_Video(cap, executor)
+
+        cap.read.assert_called_once()
+        out.write.assert_not_called()
+        out.release.assert_called_once()
+
 
 # ---------------------------------------------------------------------------
-# 5. Capture_Audio
+# 6. Capture_Audio (retorna None em qualquer falha)
 # ---------------------------------------------------------------------------
 
 class TestCaptureAudio:
@@ -247,12 +258,11 @@ class TestCaptureAudio:
         rec = MagicMock(name="recognizer")
         with patch.object(control_mod.sr, "Recognizer", return_value=rec), \
              patch.object(control_mod.sr, "Microphone") as mk_mic:
-            # `with sr.Microphone() as source` -> entrega um source qualquer
             mk_mic.return_value.__enter__.return_value = MagicMock(name="source")
             yield rec
 
     def test_retorno_inclui_texto_reconhecido(self, control_instance, recognizer):
-        """Happy path: o texto do recognize_google compoe o retorno e ACTION fica True."""
+        """Happy path: o texto do recognize_google e retornado e ACTION fica True."""
         recognizer.recognize_google.return_value = "ola jarvis"
         executor = _ImmediateExecutor()
 
@@ -261,29 +271,35 @@ class TestCaptureAudio:
         assert resultado == "ola jarvis"
         assert control_instance.ACTION is True
         recognizer.recognize_google.assert_called_once()
-        # language pt-BR deve ser passado ao reconhecedor
         assert recognizer.recognize_google.call_args.kwargs.get("language") == "pt-BR"
 
-    def test_unknown_value_error_retorna_sem_pergunta(self, control_instance, recognizer):
-        """UnknownValueError (audio nao compreendido) -> 'Sem Pergunta'."""
+    def test_unknown_value_error_retorna_none(self, control_instance, recognizer):
+        """UnknownValueError (audio nao compreendido) -> None (sem pergunta)."""
         recognizer.recognize_google.side_effect = control_mod.sr.UnknownValueError()
         executor = _ImmediateExecutor()
 
-        assert control_instance.Capture_Audio(executor) == "Sem Pergunta"
+        assert control_instance.Capture_Audio(executor) is None
 
-    def test_request_error_retorna_erro_de_conexao(self, control_instance, recognizer):
-        """RequestError (falha de rede no servico) -> 'Erro de conexão'."""
+    def test_request_error_retorna_none(self, control_instance, recognizer):
+        """RequestError (falha de rede) -> None."""
         recognizer.recognize_google.side_effect = control_mod.sr.RequestError()
         executor = _ImmediateExecutor()
 
-        assert control_instance.Capture_Audio(executor) == "Erro de conexão"
+        assert control_instance.Capture_Audio(executor) is None
 
-    def test_excecao_generica_retorna_mensagem_inesperada(self, control_instance, recognizer):
-        """Qualquer outra excecao vira 'Erro inesperado: <msg>'."""
+    def test_excecao_generica_retorna_none(self, control_instance, recognizer):
+        """Qualquer outra excecao tambem vira None (nao quebra o fluxo)."""
         recognizer.recognize_google.side_effect = ValueError("boom")
         executor = _ImmediateExecutor()
 
-        assert control_instance.Capture_Audio(executor) == "Erro inesperado: boom"
+        assert control_instance.Capture_Audio(executor) is None
+
+    def test_texto_vazio_retorna_none(self, control_instance, recognizer):
+        """String vazia do reconhecedor vira None (sem pergunta valida)."""
+        recognizer.recognize_google.return_value = ""
+        executor = _ImmediateExecutor()
+
+        assert control_instance.Capture_Audio(executor) is None
 
     def test_configura_parametros_do_microfone(self, control_instance, recognizer):
         """Os parametros de calibracao do recognizer sao ajustados antes de ouvir."""
@@ -298,7 +314,7 @@ class TestCaptureAudio:
 
 
 # ---------------------------------------------------------------------------
-# 6. Fluxos que orquestram o Jarvis
+# 7. Fluxos que orquestram o Jarvis
 # ---------------------------------------------------------------------------
 
 class TestAudioToAudio:
@@ -307,24 +323,28 @@ class TestAudioToAudio:
     def test_chama_text_to_text_e_zera_action(self, control_instance):
         """O prompt transcrito vai para Text_To_Text e ACTION volta a False."""
         executor = MagicMock(name="executor")
-        # 1a chamada: Capture_Audio -> prompt; usamos um Future pronto
-        executor.submit.return_value = _make_future("qual a previsao?")
-
-        control_instance.Audio_to_Audio(executor)
+        with patch.object(control_instance, "Capture_Audio", return_value="qual a previsao?"):
+            control_instance.Audio_to_Audio(executor)
 
         control_instance.jarvis_system.Text_To_Text.assert_awaited_once_with("qual a previsao?")
         assert control_instance.ACTION is False
 
-    def test_submete_capture_audio_ao_executor(self, control_instance):
-        """A captura de audio e delegada ao executor (Capture_Audio)."""
+    def test_chama_capture_audio_com_executor(self, control_instance):
+        """A captura de audio e feita passando o executor."""
         executor = MagicMock(name="executor")
-        executor.submit.return_value = _make_future("oi")
+        with patch.object(control_instance, "Capture_Audio", return_value="oi") as mk_audio:
+            control_instance.Audio_to_Audio(executor)
 
-        control_instance.Audio_to_Audio(executor)
+        mk_audio.assert_called_once_with(executor)
 
-        executor.submit.assert_called_once_with(
-            control_instance.Capture_Audio, executor
-        )
+    def test_prompt_vazio_nao_consulta_jarvis(self, control_instance):
+        """Sem pergunta valida (None), Text_To_Text NAO e chamado."""
+        executor = MagicMock(name="executor")
+        with patch.object(control_instance, "Capture_Audio", return_value=None):
+            control_instance.Audio_to_Audio(executor)
+
+        control_instance.jarvis_system.Text_To_Text.assert_not_awaited()
+        assert control_instance.ACTION is False
 
 
 class TestImageAudio:
@@ -333,92 +353,85 @@ class TestImageAudio:
     def test_passa_caminho_da_foto_e_prompt(self, control_instance):
         """Image_To_Text recebe (image_path, prompt) e ACTION volta a False."""
         executor = MagicMock(name="executor")
-        # ordem dos submits: Capture_Photo (path), Capture_Audio (prompt)
-        executor.submit.side_effect = [
-            _make_future("midia/foto.jpg"),
-            _make_future("o que e isso?"),
-        ]
-
-        control_instance.Image_Audio(MagicMock(name="frame"), executor)
+        executor.submit.return_value = _make_future("midia/foto.jpg")  # Capture_Photo
+        with patch.object(control_instance, "Capture_Audio", return_value="o que e isso?"):
+            control_instance.Image_Audio(MagicMock(name="frame"), executor)
 
         control_instance.jarvis_system.Image_To_Text.assert_awaited_once_with(
             "midia/foto.jpg", "o que e isso?"
         )
         assert control_instance.ACTION is False
 
+    def test_prompt_vazio_nao_consulta_jarvis(self, control_instance):
+        """Sem pergunta valida, Image_To_Text NAO e chamado."""
+        executor = MagicMock(name="executor")
+        executor.submit.return_value = _make_future("midia/foto.jpg")
+        with patch.object(control_instance, "Capture_Audio", return_value=None):
+            control_instance.Image_Audio(MagicMock(name="frame"), executor)
+
+        control_instance.jarvis_system.Image_To_Text.assert_not_awaited()
+        assert control_instance.ACTION is False
+
 
 class TestVideoAudio:
-    """Video_Audio: video + voz -> Gemini (video+texto).
+    """Video_Audio: grava video + voz -> Gemini (video+texto).
 
-    BUG conhecido (control.py:108): ``self.Capture_Audio`` e chamado SEM o
-    argumento ``executor``, que e obrigatorio. Num executor REAL o future
-    captura esse TypeError e ``future_audio.result()`` o re-lanca. Aqui usamos um
-    executor MagicMock cujo ``submit`` NAO chama a funcao, justamente para
-    contornar o bug e validar o resto do encadeamento. O comportamento real
-    quebrado e coberto por ``test_bug_capture_audio_sem_executor`` (xfail).
+    A gravacao e iniciada (Event set), a fala capturada (~5s) e a gravacao
+    encerrada (Event clear) antes de consultar o Gemini. O bug historico (chamar
+    ``Capture_Audio`` sem o argumento ``executor``) foi corrigido na Onda 1.
     """
 
     def test_passa_caminho_do_video_e_prompt(self, control_instance):
         """Video_To_Text recebe (video_path, prompt) e ACTION volta a False."""
         executor = MagicMock(name="executor")
-        executor.submit.side_effect = [
-            _make_future("midia/video.avi"),
-            _make_future("descreva a cena"),
-        ]
-
-        control_instance.Video_Audio(MagicMock(name="cap"), executor)
+        executor.submit.return_value = _make_future("midia/video.avi")  # Capture_Video
+        with patch.object(control_instance, "Capture_Audio", return_value="descreva a cena"):
+            control_instance.Video_Audio(MagicMock(name="cap"), executor)
 
         control_instance.jarvis_system.Video_To_Text.assert_awaited_once_with(
             "midia/video.avi", "descreva a cena"
         )
         assert control_instance.ACTION is False
 
-    @pytest.mark.xfail(
-        reason="control.py:108 chama self.Capture_Audio sem o arg 'executor' obrigatorio",
-        strict=False,
-    )
-    def test_bug_capture_audio_sem_executor(self, control_instance):
-        """Documenta o bug: com executor REAL, a captura de audio estoura TypeError.
-
-        Aqui o executor de fato executa a funcao submetida; como Video_Audio
-        chama ``self.Capture_Audio`` sem ``executor``, o future resultante carrega
-        o TypeError e ``.result()`` o re-lanca. Este teste deve falhar enquanto o
-        bug existir (xfail nao-estrito).
-        """
-        executor = _ImmediateExecutor()
-
-        # Capture_Video tocaria som e usaria cv2; isola para focar no bug do audio.
-        with patch.object(control_instance, "Capture_Video", return_value="midia/v.avi"):
+    def test_capture_audio_recebe_executor(self, control_instance):
+        """Regressao do bug corrigido: Capture_Audio e chamado COM o executor."""
+        executor = MagicMock(name="executor")
+        executor.submit.return_value = _make_future("midia/v.avi")
+        with patch.object(control_instance, "Capture_Audio", return_value="x") as mk_audio:
             control_instance.Video_Audio(MagicMock(name="cap"), executor)
+
+        mk_audio.assert_called_once_with(executor)
+
+    def test_encerra_gravacao_ao_final(self, control_instance):
+        """Ao fim de Video_Audio a gravacao esta encerrada (Event clear)."""
+        executor = MagicMock(name="executor")
+        executor.submit.return_value = _make_future("midia/v.avi")
+        with patch.object(control_instance, "Capture_Audio", return_value="x"):
+            control_instance.Video_Audio(MagicMock(name="cap"), executor)
+
+        assert control_instance.is_recording() is False
 
 
 # ---------------------------------------------------------------------------
-# 7. Bug: Recycle_midia declarado sem self
+# 8. Recycle_midia: bug NAO corrigido na Onda 1 (codigo morto, deferido)
 # ---------------------------------------------------------------------------
 
 class TestRecycleMidia:
-    """Recycle_midia foi declarado sem ``self`` (control.py:30)."""
+    """Recycle_midia foi declarado sem ``self`` (control.py). Deferido."""
 
     @pytest.mark.xfail(
         reason="Recycle_midia(midia_path) declarado sem self -> chamar via instancia "
-               "passa o self como midia_path",
+               "passa o self como midia_path (deferido para onda futura)",
         strict=False,
     )
     def test_bug_recycle_midia_sem_self(self, control_instance):
-        """Chamar pela instancia injeta self como 1o arg, deslocando midia_path.
-
-        ``ctrl.Recycle_midia('x')`` vira ``Recycle_midia(ctrl, 'x')`` -> excesso de
-        argumentos (TypeError). Documenta a assinatura incorreta.
-        """
+        """Chamar pela instancia injeta self como 1o arg, deslocando midia_path."""
         with patch.object(control_mod, "os") as mk_os:
             control_instance.Recycle_midia("midia/foto.jpg")
             mk_os.remove.assert_called_once_with("midia/foto.jpg")
 
     def test_recycle_midia_chamada_diretamente_remove_arquivo(self):
-        """Chamada como funcao da classe (sem instancia) funciona: remove o path.
-
-        Demonstra que a logica em si esta certa; o problema e so a falta de self.
-        """
+        """Chamada como funcao da classe (sem instancia) funciona: remove o path."""
         with patch.object(control_mod, "os") as mk_os:
             control_mod.Control.Recycle_midia("midia/foto.jpg")
             mk_os.remove.assert_called_once_with("midia/foto.jpg")

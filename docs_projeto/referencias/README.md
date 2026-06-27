@@ -22,3 +22,9 @@ Resumos de URLs, bibliotecas, normas ou conceitos citados durante o desenvolvime
 ## Indice
 
 - [[pytest-mock-total]] — padrao de mock total via `sys.modules` + stack pytest/pytest-cov/pytest-asyncio
+- [[app-cerebro-android-ondevice]] — app cerebro: framework, camera UVC, LLM on-device, mapeamento do MVP Python
+- [[camera-esp32-csi-dvp-uvc]] — camera no ESP32: CSI vs DVP vs UVC e por que a CSI 5MP e Pi-only
+- [[ble-wifi-video-audio-esp32]] — BLE nao transmite video; WiFi obrigatorio; arquitetura de dois canais
+- [[vlm-offline-celular-gemma3n-stt-tts-ptbr]] — VLM offline (Gemma 3n) + STT/TTS PT-BR on-device
+- [[audio-i2s-esp32-mems-max98357a-conducao-ossea]] — cadeia de audio I2S: mic MEMS, MAX98357A, conducao ossea
+- [[energia-mcu-esp32s3-cliente-fino]] — energia/MCU: ESP32-S3 vs Teensy/nRF, standby do DevKitC, bateria de wearable

@@ -2,7 +2,7 @@
 
 Foco: a NOSSA orquestracao/fluxo, nao a lib stubada. ``genai``
 (google.generativeai) e ``edge_tts`` sao MagicMock injetados pelo conftest;
-``jarvis.time`` e o modulo stdlib real (monkeypatchamos ``sleep`` para nao
+o polling de PROCESSING usa ``asyncio.sleep`` (monkeypatchado para nao
 dormir). ``dotenv`` e real, mas ``load_dotenv()`` apenas le o ``.env`` local
 (efeito colateral inofensivo nos testes).
 
@@ -253,8 +253,8 @@ class TestVideoToText:
 
     @pytest.fixture(autouse=True)
     def _no_sleep(self, monkeypatch):
-        """Nao dormir de verdade no while de PROCESSING."""
-        monkeypatch.setattr(jarvis.time, "sleep", lambda *_: None)
+        """Nao dormir de verdade no polling de PROCESSING (agora via asyncio.sleep)."""
+        monkeypatch.setattr(jarvis.asyncio, "sleep", AsyncMock(name="sleep"))
 
     async def test_video_ja_ativo_segue_direto(self, jarvis_factory):
         """Estado ACTIVE de cara: nao entra no while, gera resposta e fala."""

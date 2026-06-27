@@ -5,7 +5,6 @@ import google.generativeai as genai # API da Gemini
 import google # Biblioteca de serviços da google
 import pathlib # Biblioteca que transforma os dados de imagem para serem enviados para o Gemini 
 import edge_tts # Biblioteca para tranformar a resposta do Gemini na voz do Jarvis
-import time # Biblioteca de tempo para controle de algumas funções
 
 
 class Jarvis: # Classe do Jarvis
@@ -88,9 +87,11 @@ class Jarvis: # Classe do Jarvis
     # Response Video to text 
     async def Video_To_Text(self, video_path, prompt) -> None:
       video_file = genai.upload_file(path=video_path) # Sobe o video na memoria da Gemini
+      backoff = 1
       while video_file.state.name == "PROCESSING":
         print('.', end='')
-        time.sleep(10) # Bomba, precisa ser limpo o processamento de carregar um video de tmanho variave.
+        await asyncio.sleep(backoff) # polling nao-bloqueante (antes era time.sleep(10), a "Bomba")
+        backoff = min(backoff * 2, 10) # backoff exponencial, teto de 10s
         video_file = genai.get_file(video_file.name)
       if video_file.state.name == "FAILED":
         raise ValueError(video_file.state.name)
