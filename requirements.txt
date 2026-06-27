@@ -1,19 +1,22 @@
-numpy
+# Dependencias de runtime do Jarvis.
+# Sem versoes fixas nesta fase; a reprodutibilidade vira do uv.lock (Onda 3).
+
+# Visao computacional e captura
 opencv-python
-nest-asyncio
-SpeechRecognition
-threadpoolctl
-python-dotenv
-google-generativeai
-google
-pathlib
-edge-tts
-playsound
-mpmath
 mediapipe
+numpy
+
+# Audio: reconhecimento de fala (mic) e sintese de voz
+SpeechRecognition
+PyAudio          # backend de microfone do SpeechRecognition (precisa de PortAudio no SO)
+edge-tts
 pygame
-oauth2client
-time
-os
-google-oauth2-tool
+
+# IA (Google Gemini)
+google-generativeai
+
+# Config e credenciais (Google Photos via OAuth)
+python-dotenv
+requests
+google-auth
 google-auth-oauthlib

@@ -393,6 +393,31 @@ total das libs). Ela codificava o comportamento antigo (e marcava os bugs como
 nao estava no escopo selecionado; permanece `xfail`. Saneamento de
 segredos/requirements (Onda 2) e a reestruturacao em camadas (Onda 5-6) seguem.
 
+### Onda 2 — concluida (2026-06-27, working tree + `git rm --cached`)
+
+**Contexto:** parte da Onda 2 ja vinha do **trabalho paralelo** (ProjectConfig
+idempotente + `test_project_config.py`; `.gitignore` cobrindo pycache/cobertura).
+Revisao: `ProjectConfig.py` esta correto (`makedirs(exist_ok=True)`, `.env` em
+append+close, guard `__main__`) — sem ajustes. Faltava o essencial: **segredos**.
+
+**Mudancas:**
+- `.gitignore`: secao de **segredos** (`.env`, `.env.*` com `!.env.example`,
+  `env/`, `secrets/`, `token.json`, `client_secret.json`, `*credentials*.json`)
+  e **dirs de runtime** (`response/`, `midia/`).
+- `requirements.txt` saneado: removidos stdlib (`time`/`os`/`pathlib`),
+  meta-pacote `google` e nao usados (`nest-asyncio`, `threadpoolctl`, `mpmath`,
+  `playsound`, `oauth2client`, `google-oauth2-tool`). Adicionados os faltantes
+  reais: `requests`, `google-auth` e **`PyAudio`** (backend de microfone do
+  SpeechRecognition; pode exigir PortAudio no SO). Sem pin (uv.lock na Onda 3).
+- `.env.example` criado (documenta `API_GEMINI` e onde ficam as credenciais OAuth).
+- `git rm -r --cached __pycache__ tests/__pycache__`: bytecode (incl. 3.9/3.12/
+  3.11) **destrackeado** do indice (segue no disco; agora ignorado).
+
+**Verificacao (estatica + suite):** `git check-ignore` confirma os segredos e
+dirs de runtime ignorados e `.env.example` rastreavel; `git ls-files` sem nenhum
+`.pyc` nem segredo real; `requirements.txt` sem stdlib/invalidos; suite
+**187 passed, 1 xfailed**. Sem `git commit`.
+
 ## Referencias
 
 - Codigo avaliado: [main.py](../../main.py), [control.py](../../control.py),
