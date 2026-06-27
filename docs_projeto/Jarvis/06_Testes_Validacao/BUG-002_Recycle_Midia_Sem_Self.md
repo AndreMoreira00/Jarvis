@@ -63,6 +63,14 @@ def Recycle_midia(self, midia_path):
 
 Alternativa: se a intencao for um utilitario sem estado, declarar como `@staticmethod`. Avaliar tambem proteger contra arquivo inexistente (`os.remove` levanta `FileNotFoundError`).
 
+## Confirmacao automatizada
+
+Defeito **confirmado** pela suite unitaria (ver [[Relatorios/RT-001_Suite_Unitaria_Pytest|RT-001]]):
+`tests/test_control.py` chama `Recycle_midia` pela instancia e captura o `TypeError` com
+`@pytest.mark.xfail(strict=False)`; um teste paralelo chama `Control.Recycle_midia('x')`
+(forma estatica) e prova que a logica de `os.remove` esta correta — isolando o defeito na
+assinatura (`self` ausente). Quando corrigido, o xfail vira xpass.
+
 ## Referencias
 
 - [[BUG-001_Video_Audio_Sem_Executor|BUG-001 · Video_Audio sem executor]]

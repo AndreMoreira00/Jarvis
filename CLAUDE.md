@@ -13,7 +13,9 @@ camera (OpenCV) → deteccao de mao (MediaPipe) → reconhecimento de gesto → 
 de controle → IA (Google Gemini) e/ou upload (Google Photos) → resposta falada
 (edge-tts + pygame).
 
-Nao ha suite de testes nem linter configurado — a validacao e manual, rodando o app.
+Ha uma suite de **testes unitarios** (`tests/`, pytest) com **mock total** das libs
+pesadas — roda sem mediapipe/opencv/pygame/gemini instalados. Nao ha linter configurado.
+A validacao funcional ainda e manual (rodando o app); os testes cobrem logica/orquestracao.
 
 ## Comandos
 
@@ -26,12 +28,34 @@ python ProjectConfig.py
 
 # 3. Rodar o app (entry point real)
 python main.py        # tecle 'q' na janela do OpenCV para sair
+
+# 4. Rodar os testes (NAO precisa das libs de runtime — mock total)
+pip install -r requirements-dev.txt
+python -m pytest                       # suite completa + cobertura (~92%)
+python -m pytest tests/test_hands.py --no-cov   # um arquivo, sem coverage
 ```
 
 - `.env` precisa de `API_GEMINI=<sua_chave_gemini>` (lido em [jarvis.py](jarvis.py)).
 - Upload no Google Photos exige `env/client_secret.json` (OAuth desktop); o fluxo
   gera `env/token.json` no primeiro uso (ver [manager.py](manager.py)).
-- CI: [.github/workflows/codeql.yml](.github/workflows/codeql.yml) roda apenas analise CodeQL.
+- CI: [.github/workflows/codeql.yml](.github/workflows/codeql.yml) roda analise CodeQL e
+  [.github/workflows/tests.yml](.github/workflows/tests.yml) roda a suite pytest com
+  gate de cobertura (85%) em Python 3.11 e 3.12.
+
+### Testes (`tests/`)
+
+- **Mock total** ([tests/conftest.py](tests/conftest.py)): stuba `mediapipe`, `cv2`,
+  `pygame`, `speech_recognition`, `google.generativeai`, `edge_tts` e `google-auth*` em
+  `sys.modules` ANTES de importar o codigo de producao. Os testes rodam sem instalar as
+  libs pesadas. `requests`/`python-dotenv` sao reais (mockados pontualmente por teste).
+- Config de pytest/coverage em [pyproject.toml](pyproject.toml) (`asyncio_mode=auto`,
+  `pythonpath=["."]`, coverage escopado aos 6 modulos de producao).
+- Fixtures de gesto canonicas (`GESTURE_OK/POSITIVE/SPEAK/SQUID/ROCK/NONE`) verificadas
+  por exclusividade; construtor `make_hand_landmarks()` cria os 21 landmarks do MediaPipe.
+- Cobertura por modulo: hands/control/jarvis/manager/ProjectConfig em 100%; `main.py` em
+  ~44% (so o loop de I/O de `main()` fica fora, deliberadamente).
+- A suite encontrou **bugs reais** no codigo (nao corrigidos — fora do escopo "testes"):
+  ver [docs_projeto/decisoes/2026-06-27_testes_unitarios.md](docs_projeto/decisoes/2026-06-27_testes_unitarios.md).
 
 ## Arquitetura
 

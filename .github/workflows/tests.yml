@@ -1,0 +1,51 @@
+name: Testes Unitarios
+
+# Roda a suite de testes unitarios (pytest) em cada push e pull request.
+# Graca ao "mock total" (tests/conftest.py stuba mediapipe/opencv/pygame/gemini/
+# edge-tts/speech_recognition), o CI NAO precisa instalar o requirements.txt de
+# runtime (que tem pseudo-pacotes problematicos como time/os/google). So o stack
+# de teste e instalado -> CI leve e deterministico.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Instalar dependencias de teste
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Rodar pytest com gate de cobertura
+        # Gate em 85%: a suite atinge ~92% (so o loop de I/O de main() fica fora);
+        # 85% deixa margem para nao quebrar em mudancas pequenas mas barra regressao real.
+        run: |
+          python -m pytest --cov-fail-under=85
+
+      - name: Publicar relatorio de cobertura (XML)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.python-version }}
+          path: coverage.xml
+          if-no-files-found: ignore

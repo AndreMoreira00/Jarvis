@@ -16,3 +16,4 @@ Registro de mudancas estruturais feitas **neste repositorio** (nao nos projetos 
 ## Indice
 
 - [[2026-05-28_configuracao_obsidian_template]] — configuracao inicial da estrutura Obsidian do template
+- [[2026-06-27_testes_unitarios]] — suite de testes unitarios com pytest + mock total (cobertura ~92%, CI com gate, 10 bugs reais mapeados)

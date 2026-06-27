@@ -4,3 +4,12 @@
 node_modules/
 .DS_Store
 Thumbs.db
+
+# Artefatos de teste/cobertura (pytest + coverage)
+.pytest_cache/
+__pycache__/
+*.py[cod]
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/

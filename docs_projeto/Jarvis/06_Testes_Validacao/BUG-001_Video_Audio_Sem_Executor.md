@@ -71,6 +71,13 @@ future_audio = executor.submit(self.Capture_Audio, executor)
 
 Apos a correcao, executar a Parte C de [[TP-002_Validacao_Fluxo_IA_Gemini|TP-002]] como teste de regressao.
 
+## Confirmacao automatizada
+
+Defeito **confirmado** pela suite unitaria (ver [[Relatorios/RT-001_Suite_Unitaria_Pytest|RT-001]]):
+`tests/test_control.py` exercita `Capture_Audio` sem `executor` e captura o `TypeError`
+com `@pytest.mark.xfail(strict=False)`. Quando o codigo for corrigido, o teste passara a
+**xpass** — sinal para promover o caso a teste de regressao normal e fechar este bug.
+
 ## Referencias
 
 - [[RF-005_Video_Mais_Pergunta_Analise|RF-005 · Video + pergunta (analise)]]

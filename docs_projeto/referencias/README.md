@@ -21,4 +21,4 @@ Resumos de URLs, bibliotecas, normas ou conceitos citados durante o desenvolvime
 
 ## Indice
 
-_(vazio — nenhuma referencia ingerida ainda)_
+- [[pytest-mock-total]] — padrao de mock total via `sys.modules` + stack pytest/pytest-cov/pytest-asyncio

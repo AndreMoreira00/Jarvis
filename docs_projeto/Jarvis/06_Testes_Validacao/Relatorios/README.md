@@ -14,6 +14,8 @@ status: aprovado
 
 # Relatorios
 
-Relatórios de execução de teste (TR-NNN): resultados, evidências e desvios.
+Relatórios de execução de teste (RT-NNN): resultados, evidências e desvios.
 
-> Template. Ao duplicar para um novo projeto, substituir pelo conteúdo real desta pasta.
+## Indice
+
+- [[RT-001_Suite_Unitaria_Pytest|RT-001 · Execucao da suite unitaria (pytest, mock total)]] — 181 passed + 2 xfailed, cobertura ~92%, confirma BUG-001/002/003.
