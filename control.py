@@ -8,10 +8,9 @@ import asyncio
 from pygame import mixer
 import os
 
-mixer.init() # Iniciando o serviço de audio do pygame
-
 class Control:  # Classe de Controle de funções
     def __init__(self):
+        mixer.init()  # Iniciando o serviço de audio do pygame (movido para ca: evita efeito colateral no import e permite testar/importar control sem dispositivo de audio)
         self.ACTION = False  # Variavel de controle de funções (Impossibilita que a função execulte varias vezes)
         self.jarvis_system = jarvis.Jarvis(mixer) # Criação do objeto Jarvis
         self.menager_system = manager.Manager()

@@ -21,6 +21,10 @@ Documentacao do **repositorio template** e do **template de projeto** que ele en
 - [[decisoes/README|decisoes/]] — registros de mudancas estruturais neste repo
 - [[referencias/README|referencias/]] — resumos de links/normas/bibliotecas citadas
 
+### Software do produto Jarvis
+
+- [[arquitetura/README|arquitetura/]] — avaliacao e plano de refatoracao do codigo Python (visao + IA + TTS)
+
 ### Template de projeto (entregue para novos projetos)
 
 - [[docs_Template_Projeto/Home|docs_Template_Projeto]] — esqueleto a ser duplicado

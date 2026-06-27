@@ -1,32 +1,113 @@
 # CLAUDE.md
 
-Instrucoes para o Claude Code neste repositorio.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Hooks ativos
+> Idioma: este repo e escrito em portugues (codigo, comentarios, docs e persona). Mantenha esse padrao.
 
-`.claude/settings.json` define um hook `UserPromptSubmit` que injeta as regras
-do projeto a cada prompt do usuario. O script vive em
-`.claude/hooks/inject-rules.js` (Node, cross-platform).
+## Visao geral
 
-Para inspecionar o que e injetado:
+**Jarvis** e o software para um par de oculos inteligentes (alvo: Raspberry Pi 3) que
+funciona por **controle por gestos**. O fluxo, por frame da camera, e:
+
+camera (OpenCV) → deteccao de mao (MediaPipe) → reconhecimento de gesto → acao
+de controle → IA (Google Gemini) e/ou upload (Google Photos) → resposta falada
+(edge-tts + pygame).
+
+Nao ha suite de testes nem linter configurado — a validacao e manual, rodando o app.
+
+## Comandos
+
+```powershell
+# 1. Instalar dependencias
+pip install -r requirements.txt
+
+# 2. Bootstrap: cria as pastas response/ e midia/ e um .env vazio (rode uma vez)
+python ProjectConfig.py
+
+# 3. Rodar o app (entry point real)
+python main.py        # tecle 'q' na janela do OpenCV para sair
 ```
-echo "{}" | node .claude/hooks/inject-rules.js
-```
 
-## Regras de comportamento (resumo)
+- `.env` precisa de `API_GEMINI=<sua_chave_gemini>` (lido em [jarvis.py](jarvis.py)).
+- Upload no Google Photos exige `env/client_secret.json` (OAuth desktop); o fluxo
+  gera `env/token.json` no primeiro uso (ver [manager.py](manager.py)).
+- CI: [.github/workflows/codeql.yml](.github/workflows/codeql.yml) roda apenas analise CodeQL.
 
-1. Consultar skills em `.claude/skills/` antes de qualquer tarefa
-2. Atualizar `docs_projeto/` ao final de mudancas e quando absorver referencias novas
-3. Minimo de 5 perguntas via AskUserQuestion (exceto leitura factual)
-4. Atuar como advogado do diabo: criticar, invalidar, oferecer caminhos alternativos
-5. Atencao a complexidade, organizacao de pastas e arquitetura limpa
-6. Ingerir referencias citadas pelo usuario para `docs_projeto/referencias/`
+## Arquitetura
 
-Detalhes completos em `docs_projeto/HOOKS.md`.
+O loop async vive em [main.py](main.py); as responsabilidades estao separadas por classe,
+uma por arquivo, instanciadas em cadeia (`Control` cria `Jarvis` e `Manager`).
 
-## Estrutura
+| Arquivo | Classe | Papel |
+|---|---|---|
+| [main.py](main.py) | — | Loop `asyncio` da camera. Para cada mao detectada, percorre a lista `checks` e dispara a acao via `ThreadPoolExecutor`. |
+| [hands.py](hands.py) | `Hands` | Wrapper do MediaPipe Hands. Cada `Map_*` retorna `True` quando a pose correspondente e detectada (geometria dos 21 landmarks). |
+| [control.py](control.py) | `Control` | Orquestra as acoes: captura de foto/video/audio, toca sons de confirmacao (`audios_check/`) e encadeia os fluxos do Jarvis. |
+| [jarvis.py](jarvis.py) | `Jarvis` | Cliente do Gemini (`gemini-2.0-flash-lite`) com persona PT-BR. Converte a resposta em fala (`edge-tts`, voz `pt-BR-AntonioNeural`) e toca via pygame. |
+| [manager.py](manager.py) | `Manager` | Upload de midia para o Google Photos via OAuth2. |
+| [ProjectConfig.py](ProjectConfig.py) | — | Script de bootstrap das pastas e `.env`. |
 
-- `.claude/settings.json` — versionado, hooks publicos
-- `.claude/settings.local.json` — ignorado pelo git, config pessoal
-- `.claude/skills/` — skills locais do projeto
-- `docs_projeto/` — documentacao do projeto (atualizar sempre)
+### Mapa gesto → acao (definido na lista `checks` em main.py)
+
+| Gesto (`Hands.Map_*`) | Mao exigida | Acao (`Control`) |
+|---|---|---|
+| OK (`Map_Ok`) | Direita | `Capture_Photo` — tira foto e sobe pro Photos |
+| Positivo/joinha (`Map_Positive`) | Esquerda | `Capture_Video` — grava enquanto `Control_Video` estiver ligado |
+| Dedo levantado (`Map_Speak`) | Direita | `Audio_to_Audio` — pergunta por voz → Gemini → resposta falada |
+| "L" (`Map_Squid`) | Esquerda | `Image_Audio` — foto + pergunta por voz → Gemini |
+| Rock (`Map_Rock`) | Direita | `Video_Audio` — video + pergunta por voz → Gemini |
+
+### Controle de concorrencia (cuidado ao mexer)
+
+- `Control.ACTION` (bool): trava global que impede disparar uma nova acao enquanto
+  outra roda. Acoes setam `ACTION = True` no inicio e `False` no fim.
+- `gesture_cooldown` (global em main.py): debounce em frames, decrementado a cada frame,
+  evita disparos repetidos do mesmo gesto.
+- `Control.Control_Video` (bool): alternado para iniciar/parar a gravacao de video.
+- Acoes sincronas pesadas rodam em `ThreadPoolExecutor`; dentro delas, codigo async e
+  chamado com `asyncio.run(...)`.
+
+## Armadilhas conhecidas
+
+- **Entry point**: e `python main.py`, nao `python jarvis.py` (o README esta
+  desatualizado nesse ponto — `jarvis.py` so define a classe, sem `__main__`).
+- **Paths relativos**: rode sempre a partir da raiz do repo. As pastas `response/` e
+  `midia/` precisam existir (crie com `ProjectConfig.py`); `env/` guarda os segredos OAuth.
+- **`requirements.txt` tem entradas problematicas**: inclui pseudo-pacotes da stdlib
+  (`time`, `os`, `pathlib`) e nomes genericos (`google`) que podem quebrar o
+  `pip install`. Se falhar, instale o que faltar manualmente em vez de confiar no arquivo.
+
+## Regras de comportamento (hook obrigatorio)
+
+[.claude/settings.json](.claude/settings.json) registra um hook `UserPromptSubmit` que
+roda [.claude/hooks/inject-rules.js](.claude/hooks/inject-rules.js) (Node, cross-platform)
+e injeta 6 regras a **cada** prompt. Resumo:
+
+1. **Skills primeiro** — revise `.claude/skills/` e invoque a skill que combinar com a tarefa antes de planejar/codar.
+2. **Documentar** — toda alteracao de codigo ou referencia citada deve reverberar em `docs_projeto/` antes de encerrar.
+3. **Minimo 5 perguntas** via `AskUserQuestion` (escopo, restricoes, estilo, criterios de aceite, edge cases) — exceto leitura factual pura.
+4. **Advogado do diabo** — criticar a abordagem, apontar riscos e oferecer ≥2 caminhos alternativos com tradeoffs.
+5. **Qualidade arquitetural** — atencao a complexidade, organizacao de pastas e separacao de responsabilidades; recusar funcoes monoliticas.
+6. **Ingestao de referencias** — URLs/bibliotecas/conceitos citados viram resumo em `docs_projeto/referencias/<slug>.md`.
+
+Inspecionar o que e injetado: `echo "{}" | node .claude/hooks/inject-rules.js`.
+Detalhes em [docs_projeto/HOOKS.md](docs_projeto/HOOKS.md).
+
+## Camada de documentacao (docs_projeto/)
+
+O repo tem **duas identidades**: (1) o app Python acima e (2) um template de
+documentacao Obsidian. `docs_projeto/` documenta o proprio repo (`HOWTO`,
+`CONVENCOES`, `HOOKS`, `decisoes/`, `referencias/`) e carrega
+`docs_Template_Projeto/` — um esqueleto de 14 modulos duplicado para projetos novos.
+
+- Ao criar/editar notas, siga o schema de frontmatter, naming, tags e IDs de
+  [docs_projeto/CONVENCOES.md](docs_projeto/CONVENCOES.md) (properties obrigatorias:
+  `title`, `type`, `status`, `created`, `updated`, `project`, `tags`; datas em ISO 8601;
+  IDs imutaveis como `ADR-0001`, `RF-001`).
+- Para usar o template num projeto novo, ver [docs_projeto/HOWTO.md](docs_projeto/HOWTO.md).
+
+## Config do Claude Code
+
+- `.claude/settings.json` — versionado (hook publico).
+- `.claude/settings.local.json` — ignorado pelo git (config pessoal).
+- `.claude/skills/` — skills locais do projeto.

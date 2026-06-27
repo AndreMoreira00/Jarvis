@@ -1,0 +1,9 @@
+# Dependencias de desenvolvimento/teste (NAO necessarias em runtime no Raspberry Pi).
+# Os testes usam "mock total": as libs pesadas de runtime (mediapipe, pygame,
+# opencv, google-generativeai, edge-tts, speech_recognition) sao stubadas em
+# tests/conftest.py e NAO precisam estar instaladas para `pytest` rodar.
+#
+# Instalacao:  pip install -r requirements-dev.txt
+pytest>=8.0
+pytest-asyncio>=0.23
+pytest-cov>=5.0

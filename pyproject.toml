@@ -1,0 +1,29 @@
+[tool.pytest.ini_options]
+# Raiz do repo no sys.path para os testes importarem hands/control/jarvis/...
+pythonpath = ["."]
+testpaths = ["tests"]
+# Funcoes async (jarvis/control) viram testes sem decorator explicito.
+asyncio_mode = "auto"
+addopts = "-q --cov --cov-report=term-missing --cov-report=xml"
+
+[tool.coverage.run]
+# Coverage medido apenas sobre o codigo de producao na raiz do repo.
+# source=["."] ancora no diretorio do projeto (exclui site-packages); o omit
+# tira testes, skills do Claude e docs. Sem isso, padroes como "main.py"
+# casariam tambem `_pytest/main.py`/`dotenv/main.py` em site-packages.
+source = ["."]
+omit = [
+    "tests/*",
+    ".claude/*",
+    "docs_projeto/*",
+    "*/site-packages/*",
+    "*/scratchpad/*",
+]
+
+[tool.coverage.report]
+show_missing = true
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+]

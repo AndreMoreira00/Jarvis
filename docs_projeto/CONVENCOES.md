@@ -125,6 +125,7 @@ Tags **proibidas** (nao informativas): `#documento`, `#nota`, `#trabalho`. O fat
 | `ADR-` | Decisao | `ADR-0001` (zero-padded 4 digitos) |
 | `RF-` | Requisito funcional | `RF-001` (3 digitos) |
 | `RNF-` | Requisito nao-funcional | `RNF-001` |
+| `CU-` | Caso de uso | `CU-001` (3 digitos) |
 | `TP-` | Plano de teste | `TP-001` |
 | `RT-` | Relatorio de teste | `RT-001` |
 | `BUG-` | Bug | `BUG-001` |
@@ -161,3 +162,4 @@ IDs sao **imutaveis**. Se uma nota for descontinuada, manter o ID e marcar `stat
 | Data | Mudanca | Motivo |
 |------|---------|--------|
 | 2026-05-28 | Versao inicial do schema | Configuracao inicial do template Obsidian |
+| 2026-06-27 | Adicionado prefixo de ID `CU-` (caso de uso) | Documentacao do app Jarvis usa casos de uso com identificador rastreavel |
