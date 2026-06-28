@@ -125,19 +125,19 @@ class TestThresholdMapOk:
         return make_hand_landmarks(coords)
 
     def test_distancia_logo_abaixo_do_limite_dispara(self, hands_instance):
-        """dist=49px (< 50) com as demais condicoes ok deve disparar Map_Ok."""
+        """dist=49px (< 50) com as demais condicoes ok deve disparar map_ok."""
         lm = self._ok_com_distancia(49)
-        assert hands_instance.Map_Ok(1000, 1000, lm, None) is True
+        assert hands_instance.map_ok(1000, 1000, lm, None) is True
 
     def test_distancia_no_limite_exato_nao_dispara(self, hands_instance):
         """dist=50px nao satisfaz '< 50' (comparacao estrita) -> nao dispara."""
         lm = self._ok_com_distancia(50)
-        assert hands_instance.Map_Ok(1000, 1000, lm, None) is None
+        assert hands_instance.map_ok(1000, 1000, lm, None) is None
 
     def test_distancia_logo_acima_do_limite_nao_dispara(self, hands_instance):
-        """dist=51px (>= 50) nao dispara Map_Ok."""
+        """dist=51px (>= 50) nao dispara map_ok."""
         lm = self._ok_com_distancia(51)
-        assert hands_instance.Map_Ok(1000, 1000, lm, None) is None
+        assert hands_instance.map_ok(1000, 1000, lm, None) is None
 
 
 class TestThresholdMapPositive:
@@ -152,19 +152,19 @@ class TestThresholdMapPositive:
         return make_hand_landmarks(coords)
 
     def test_polegar_logo_acima_do_limite_dispara(self, hands_instance):
-        """polegar_4_y=349 (< 350) deve disparar Map_Positive."""
+        """polegar_4_y=349 (< 350) deve disparar map_positive."""
         lm = self._positive_com_polegar4_y(349)
-        assert hands_instance.Map_Positive(1000, 1000, lm, None) is True
+        assert hands_instance.map_positive(1000, 1000, lm, None) is True
 
     def test_polegar_no_limite_exato_nao_dispara(self, hands_instance):
         """polegar_4_y=350 nao satisfaz '< 350' (estrito) -> nao dispara."""
         lm = self._positive_com_polegar4_y(350)
-        assert hands_instance.Map_Positive(1000, 1000, lm, None) is None
+        assert hands_instance.map_positive(1000, 1000, lm, None) is None
 
     def test_polegar_logo_abaixo_do_limite_nao_dispara(self, hands_instance):
-        """polegar_4_y=351 (>= 350) nao dispara Map_Positive."""
+        """polegar_4_y=351 (>= 350) nao dispara map_positive."""
         lm = self._positive_com_polegar4_y(351)
-        assert hands_instance.Map_Positive(1000, 1000, lm, None) is None
+        assert hands_instance.map_positive(1000, 1000, lm, None) is None
 
 
 class TestThresholdMapSpeak:
@@ -179,19 +179,19 @@ class TestThresholdMapSpeak:
         return make_hand_landmarks(coords)
 
     def test_indicador_logo_acima_do_limite_dispara(self, hands_instance):
-        """indicador_8_y=349 (< 350) deve disparar Map_Speak."""
+        """indicador_8_y=349 (< 350) deve disparar map_speak."""
         lm = self._speak_com_indicador8_y(349)
-        assert hands_instance.Map_Speak(1000, 1000, lm, None) is True
+        assert hands_instance.map_speak(1000, 1000, lm, None) is True
 
     def test_indicador_no_limite_exato_nao_dispara(self, hands_instance):
         """indicador_8_y=350 nao satisfaz '< 350' -> nao dispara."""
         lm = self._speak_com_indicador8_y(350)
-        assert hands_instance.Map_Speak(1000, 1000, lm, None) is None
+        assert hands_instance.map_speak(1000, 1000, lm, None) is None
 
     def test_indicador_logo_abaixo_do_limite_nao_dispara(self, hands_instance):
-        """indicador_8_y=351 (>= 350) nao dispara Map_Speak."""
+        """indicador_8_y=351 (>= 350) nao dispara map_speak."""
         lm = self._speak_com_indicador8_y(351)
-        assert hands_instance.Map_Speak(1000, 1000, lm, None) is None
+        assert hands_instance.map_speak(1000, 1000, lm, None) is None
 
 
 class TestThresholdMapSquid:
@@ -206,19 +206,19 @@ class TestThresholdMapSquid:
         return make_hand_landmarks(coords)
 
     def test_indicador_logo_acima_do_limite_dispara(self, hands_instance):
-        """indicador_8_y=349 (< 350) deve disparar Map_Squid."""
+        """indicador_8_y=349 (< 350) deve disparar map_squid."""
         lm = self._squid_com_indicador8_y(349)
-        assert hands_instance.Map_Squid(1000, 1000, lm, None) is True
+        assert hands_instance.map_squid(1000, 1000, lm, None) is True
 
     def test_indicador_no_limite_exato_nao_dispara(self, hands_instance):
         """indicador_8_y=350 nao satisfaz '< 350' -> nao dispara."""
         lm = self._squid_com_indicador8_y(350)
-        assert hands_instance.Map_Squid(1000, 1000, lm, None) is None
+        assert hands_instance.map_squid(1000, 1000, lm, None) is None
 
     def test_indicador_logo_abaixo_do_limite_nao_dispara(self, hands_instance):
-        """indicador_8_y=351 (>= 350) nao dispara Map_Squid."""
+        """indicador_8_y=351 (>= 350) nao dispara map_squid."""
         lm = self._squid_com_indicador8_y(351)
-        assert hands_instance.Map_Squid(1000, 1000, lm, None) is None
+        assert hands_instance.map_squid(1000, 1000, lm, None) is None
 
 
 class TestThresholdMapRock:
@@ -241,38 +241,38 @@ class TestThresholdMapRock:
         return make_hand_landmarks(coords)
 
     def test_indicador_logo_acima_do_limite_dispara(self, hands_instance):
-        """Com mindinho ok, indicador_8_y=349 (< 350) deve disparar Map_Rock."""
+        """Com mindinho ok, indicador_8_y=349 (< 350) deve disparar map_rock."""
         lm = self._rock_indicador8_y(349)
-        assert hands_instance.Map_Rock(1000, 1000, lm, None) is True
+        assert hands_instance.map_rock(1000, 1000, lm, None) is True
 
     def test_indicador_no_limite_nao_dispara(self, hands_instance):
         """indicador_8_y=350 (nao < 350) quebra a 1a condicao -> nao dispara."""
         lm = self._rock_indicador8_y(350)
-        assert hands_instance.Map_Rock(1000, 1000, lm, None) is None
+        assert hands_instance.map_rock(1000, 1000, lm, None) is None
 
     def test_indicador_logo_abaixo_do_limite_nao_dispara(self, hands_instance):
-        """indicador_8_y=351 (>= 350) nao dispara Map_Rock."""
+        """indicador_8_y=351 (>= 350) nao dispara map_rock."""
         lm = self._rock_indicador8_y(351)
-        assert hands_instance.Map_Rock(1000, 1000, lm, None) is None
+        assert hands_instance.map_rock(1000, 1000, lm, None) is None
 
     def test_mindinho_logo_acima_do_limite_dispara(self, hands_instance):
-        """Com indicador ok, mindinho_20_y=349 (< 350) deve disparar Map_Rock."""
+        """Com indicador ok, mindinho_20_y=349 (< 350) deve disparar map_rock."""
         lm = self._rock_mindinho20_y(349)
-        assert hands_instance.Map_Rock(1000, 1000, lm, None) is True
+        assert hands_instance.map_rock(1000, 1000, lm, None) is True
 
     def test_mindinho_no_limite_nao_dispara(self, hands_instance):
         """mindinho_20_y=350 (nao < 350) quebra a 2a condicao -> nao dispara."""
         lm = self._rock_mindinho20_y(350)
-        assert hands_instance.Map_Rock(1000, 1000, lm, None) is None
+        assert hands_instance.map_rock(1000, 1000, lm, None) is None
 
     def test_mindinho_logo_abaixo_do_limite_nao_dispara(self, hands_instance):
-        """mindinho_20_y=351 (>= 350) nao dispara Map_Rock."""
+        """mindinho_20_y=351 (>= 350) nao dispara map_rock."""
         lm = self._rock_mindinho20_y(351)
-        assert hands_instance.Map_Rock(1000, 1000, lm, None) is None
+        assert hands_instance.map_rock(1000, 1000, lm, None) is None
 
 
 # ---------------------------------------------------------------------------
-# 5. Calculate_Distance: euclidiana pura
+# 5. calculate_distance: euclidiana pura
 # ---------------------------------------------------------------------------
 
 
@@ -291,19 +291,19 @@ class TestCalculateDistance:
     )
     def test_distancia_valores_conhecidos(self, hands_instance, p1, p2, esperado):
         """A distancia deve bater com o calculo euclidiano para casos conhecidos."""
-        assert hands_instance.Calculate_Distance(p1, p2) == pytest.approx(esperado)
+        assert hands_instance.calculate_distance(p1, p2) == pytest.approx(esperado)
 
     def test_distancia_e_simetrica(self, hands_instance):
         """d(p1,p2) == d(p2,p1): a metrica nao depende da ordem dos argumentos."""
         p1, p2 = (2, 9), (11, 3)
-        assert hands_instance.Calculate_Distance(p1, p2) == pytest.approx(
-            hands_instance.Calculate_Distance(p2, p1)
+        assert hands_instance.calculate_distance(p1, p2) == pytest.approx(
+            hands_instance.calculate_distance(p2, p1)
         )
 
     def test_distancia_bate_com_math_hypot(self, hands_instance):
         """Resultado deve coincidir com math.hypot (referencia da stdlib)."""
         p1, p2 = (5, 12), (0, 0)
-        assert hands_instance.Calculate_Distance(p1, p2) == pytest.approx(
+        assert hands_instance.calculate_distance(p1, p2) == pytest.approx(
             math.hypot(p1[0] - p2[0], p1[1] - p2[1])
         )
 

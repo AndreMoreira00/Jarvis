@@ -1,7 +1,7 @@
 import os
 
 
-def Config_Project():
+def config_project():
     # Idempotente: nao quebra se as pastas ja existirem (antes usava os.mkdir e
     # estourava FileExistsError ao rodar duas vezes).
     os.makedirs("response", exist_ok=True)
@@ -14,4 +14,4 @@ def Config_Project():
 # Guard de __main__: permite importar este modulo (ex.: em testes) sem disparar
 # os efeitos colaterais de criar pastas/arquivo.
 if __name__ == "__main__":
-    Config_Project()
+    config_project()

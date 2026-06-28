@@ -54,8 +54,8 @@ python -m pytest tests/test_hands.py --no-cov   # um arquivo, sem coverage
   `pythonpath=["src","scripts"]`, coverage escopado a `src/jarvis` + `scripts/`).
 - Fixtures de gesto canonicas (`GESTURE_OK/POSITIVE/SPEAK/SQUID/ROCK/NONE`) verificadas
   por exclusividade; construtor `make_hand_landmarks()` cria os 21 landmarks do MediaPipe.
-- Cobertura por modulo: gestures/hands/control/jarvis/manager/bootstrap em 100%;
-  `core/loop.py` em ~45% (so o loop de I/O de `main()` fica fora, deliberadamente).
+- Cobertura por modulo: tudo em 100% exceto `core/loop.py` (~32%, so o loop de I/O de
+  `main()` fica fora, deliberadamente). Total ~92%.
 - A suite encontrou **bugs reais** no codigo (nao corrigidos — fora do escopo "testes"):
   ver [docs_projeto/decisoes/2026-06-27_testes_unitarios.md](docs_projeto/decisoes/2026-06-27_testes_unitarios.md).
 
@@ -64,40 +64,46 @@ python -m pytest tests/test_hands.py --no-cov   # um arquivo, sem coverage
 O codigo e um **pacote em camadas** (`src/jarvis/`): **vision** (captura/gestos),
 **core** (orquestracao + loop) e **services** (integracoes externas). O loop async vive
 em [core/loop.py](src/jarvis/core/loop.py); as responsabilidades estao separadas por
-classe, uma por arquivo, instanciadas em cadeia (`Control` cria `Jarvis` e `Manager`).
-Entry: [`__main__.py`](src/jarvis/__main__.py) (`python -m jarvis`) ou o shim
-[main.py](main.py) na raiz.
+classe, uma por arquivo, com **injecao por construtor** montada no composition root
+[app.py](src/jarvis/app.py) (`build()`). Entry: [`__main__.py`](src/jarvis/__main__.py)
+(`python -m jarvis`) ou o shim [main.py](main.py) na raiz.
 
 | Arquivo | Classe | Papel |
 |---|---|---|
 | [core/loop.py](src/jarvis/core/loop.py) | — | Loop `asyncio` da camera. Para cada mao detectada, percorre a lista `checks` e dispara a acao via `ThreadPoolExecutor`. |
 | [vision/gestures.py](src/jarvis/vision/gestures.py) | — | Funcoes **puras** de classificacao (`is_ok`/`is_positive`/...) sobre os 21 landmarks normalizados. |
-| [vision/hands.py](src/jarvis/vision/hands.py) | `Hands` | Wrapper do MediaPipe Hands. Cada `Map_*` delega para `gestures.*` e retorna `True`/`None` (contrato legado). |
-| [core/control.py](src/jarvis/core/control.py) | `Control` | Orquestra as acoes: captura de foto/video/audio, toca sons de confirmacao (`audios_check/`) e encadeia os fluxos do Jarvis. |
+| [vision/hands.py](src/jarvis/vision/hands.py) | `Hands` | Wrapper do MediaPipe Hands. Cada `map_*` delega para `gestures.*` e retorna `True`/`None` (contrato legado). |
+| [core/capture.py](src/jarvis/core/capture.py) | `Capture` | Captura de foto/video/audio (I/O) + sons de confirmacao (`audios_check/`). |
+| [core/flows.py](src/jarvis/core/flows.py) | `Flows` | Orquestra os fluxos (a "state machine"): `audio_to_audio`/`image_audio`/`video_audio`. |
+| [core/state.py](src/jarvis/core/state.py) | `RuntimeState` | Estado efemero compartilhado: trava `busy` + gravacao (`threading.Event`). |
+| [core/async_bridge.py](src/jarvis/core/async_bridge.py) | `AsyncBridge` | Roda corrotinas a partir de worker threads (loop reutilizavel por thread). |
+| [app.py](src/jarvis/app.py) | `App` / `build()` | Composition root: monta e injeta o grafo de objetos. |
+| [config.py](src/jarvis/config.py) | `Config` | Configuracao central (chave/modelo/voz/paths/escopos) + persona PT-BR. |
 | [services/jarvis.py](src/jarvis/services/jarvis.py) | `Jarvis` | Cliente do Gemini (`gemini-2.0-flash-lite`) com persona PT-BR. Converte a resposta em fala (`edge-tts`, voz `pt-BR-AntonioNeural`) e toca via pygame. |
 | [services/manager.py](src/jarvis/services/manager.py) | `Manager` | Upload de midia para o Google Photos via OAuth2. |
 | [scripts/bootstrap.py](scripts/bootstrap.py) | — | Script de bootstrap das pastas e `.env`. |
 
 ### Mapa gesto → acao (definido na lista `checks` em core/loop.py)
 
-| Gesto (`Hands.Map_*`) | Mao exigida | Acao (`Control`) |
+| Gesto (`Hands.map_*`) | Mao exigida | Acao |
 |---|---|---|
-| OK (`Map_Ok`) | Direita | `Capture_Photo` — tira foto e sobe pro Photos |
-| Positivo/joinha (`Map_Positive`) | Esquerda | `Capture_Video` — grava enquanto `Control_Video` estiver ligado |
-| Dedo levantado (`Map_Speak`) | Direita | `Audio_to_Audio` — pergunta por voz → Gemini → resposta falada |
-| "L" (`Map_Squid`) | Esquerda | `Image_Audio` — foto + pergunta por voz → Gemini |
-| Rock (`Map_Rock`) | Direita | `Video_Audio` — video + pergunta por voz → Gemini |
+| OK (`map_ok`) | Direita | `Capture.capture_photo` — tira foto e sobe pro Photos |
+| Positivo/joinha (`map_positive`) | Esquerda | `Capture.capture_video` — grava enquanto `RuntimeState` estiver gravando |
+| Dedo levantado (`map_speak`) | Direita | `Flows.audio_to_audio` — pergunta por voz → Gemini → resposta falada |
+| "L" (`map_squid`) | Esquerda | `Flows.image_audio` — foto + pergunta por voz → Gemini |
+| Rock (`map_rock`) | Direita | `Flows.video_audio` — video + pergunta por voz → Gemini |
 
 ### Controle de concorrencia (cuidado ao mexer)
 
-- `Control.ACTION` (bool): trava global que impede disparar uma nova acao enquanto
-  outra roda. Acoes setam `ACTION = True` no inicio e `False` no fim.
+- `RuntimeState.busy` (bool): trava global que impede disparar uma nova acao enquanto
+  outra roda. Os fluxos chamam `begin()` no inicio e `end()` no fim.
 - `gesture_cooldown` (global em core/loop.py): debounce em frames, decrementado a cada
   frame, evita disparos repetidos do mesmo gesto.
-- `Control._recording` (`threading.Event`): estado de gravacao thread-safe;
-  `toggle_recording()`/`is_recording()` ligam/desligam (substituiu o antigo `Control_Video`).
+- `RuntimeState` gravacao (`threading.Event`): `toggle_recording()`/`start_recording()`/
+  `stop_recording()`/`is_recording()`. Um unico `RuntimeState` e compartilhado entre
+  `Capture`, `Flows` e o loop.
 - Acoes sincronas pesadas rodam em `ThreadPoolExecutor`; dentro delas, o codigo async e
-  rodado via `Control._run(...)` (event loop reutilizavel por thread; substituiu `asyncio.run`).
+  rodado via `AsyncBridge.run(...)` (loop reutilizavel por thread; substituiu `asyncio.run`).
 
 ## Armadilhas conhecidas
 

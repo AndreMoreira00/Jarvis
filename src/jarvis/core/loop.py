@@ -3,22 +3,20 @@ from concurrent.futures import ThreadPoolExecutor  # Torna as funções sincrona
 
 import cv2  # Biblioteca que da acessoa câmera
 
-from jarvis.core import control  # Importação da classe do Control
-from jarvis.vision import hands  # Importação da classe do Hands
+from jarvis.app import build  # Composition root: monta hands/capture/flows/state
 
 gesture_cooldown = 0
 
 
 async def main():  # Função de execução principal
-
     global gesture_cooldown
 
-    hands_task = asyncio.create_task(init_hands())
-    control_task = asyncio.create_task(init_control())
-
-    hands_system, control_functions = await asyncio.gather(
-        hands_task, control_task
-    )  # Criação do objeto Hands e Control
+    # Monta o grafo de objetos (composition root) fora do event loop da camera.
+    app = await asyncio.get_running_loop().run_in_executor(None, build)
+    hands_system = app.hands
+    capture = app.capture
+    flows = app.flows
+    state = app.state
 
     # Preferencia de camera
     cap = cv2.VideoCapture(0)
@@ -26,9 +24,7 @@ async def main():  # Função de execução principal
     with ThreadPoolExecutor() as executor:  # Torna as funções sincronas
         # Execulta as funçõoes de dentro enquanto a camera está aberta
         while cap.isOpened():
-            ret, frame = (
-                cap.read()
-            )  # Captura de cada frame da camera. Ret é um parametro para verificar a captura
+            ret, frame = cap.read()  # Captura de cada frame; ret indica sucesso
 
             if not ret:
                 print("Erro ao capturar o frame.")
@@ -49,50 +45,46 @@ async def main():  # Função de execução principal
                         0
                     ].label  # Identificação da mão direita e esquerda
 
-                    h, w, _ = (
-                        frame.shape
-                    )  # Constantes de proporção da camera h = heigth, w = width, _ = canais
+                    h, w, _ = frame.shape  # Proporção da camera (h=altura, w=largura)
 
                     # (func_exe, func_act, lado_da_mao, cooldown, controla_gravacao)
                     checks = [
                         # Gesto OK -> tirar foto
                         (
-                            lambda: executor.submit(
-                                control_functions.Capture_Photo, frame, executor
-                            ),
-                            lambda: hands_system.Map_Ok(h, w, hand_landmarks, frame),
+                            lambda: executor.submit(capture.capture_photo, frame, executor),
+                            lambda: hands_system.map_ok(h, w, hand_landmarks, frame),
                             "Right",
                             20,
                             False,
                         ),
                         # Gesto Positivo -> iniciar/parar gravacao de video
                         (
-                            lambda: executor.submit(control_functions.Capture_Video, cap, executor),
-                            lambda: hands_system.Map_Positive(h, w, hand_landmarks, frame),
+                            lambda: executor.submit(capture.capture_video, cap, executor),
+                            lambda: hands_system.map_positive(h, w, hand_landmarks, frame),
                             "Left",
                             30,
                             True,
                         ),
                         # Gesto Levantar dedo -> pergunta por voz
                         (
-                            lambda: executor.submit(control_functions.Audio_to_Audio, executor),
-                            lambda: hands_system.Map_Speak(h, w, hand_landmarks, frame),
+                            lambda: executor.submit(flows.audio_to_audio, executor),
+                            lambda: hands_system.map_speak(h, w, hand_landmarks, frame),
                             "Right",
                             20,
                             False,
                         ),
                         # Gesto Faz o L -> foto + pergunta sobre a imagem
                         (
-                            lambda: executor.submit(control_functions.Image_Audio, frame, executor),
-                            lambda: hands_system.Map_Squid(h, w, hand_landmarks, frame),
+                            lambda: executor.submit(flows.image_audio, frame, executor),
+                            lambda: hands_system.map_squid(h, w, hand_landmarks, frame),
                             "Left",
                             20,
                             False,
                         ),
                         # Gesto Rock -> grava video + pergunta sobre o video
                         (
-                            lambda: executor.submit(control_functions.Video_Audio, cap, executor),
-                            lambda: hands_system.Map_Rock(h, w, hand_landmarks, frame),
+                            lambda: executor.submit(flows.video_audio, cap, executor),
+                            lambda: hands_system.map_rock(h, w, hand_landmarks, frame),
                             "Right",
                             20,
                             False,
@@ -100,15 +92,15 @@ async def main():  # Função de execução principal
                     ]
 
                     for func_exe, func_act, side, cooldown, controls_recording in checks:
-                        if control_functions.ACTION is False and gesture_cooldown == 0:
-                            Check_Gesture(
+                        if state.busy is False and gesture_cooldown == 0:
+                            check_gesture(
                                 func_exe,
                                 func_act,
                                 side,
                                 hand_label,
                                 cooldown,
                                 controls_recording,
-                                control_functions,
+                                state,
                             )
 
                     # Reduz o cooldown a cada frame
@@ -128,50 +120,18 @@ async def main():  # Função de execução principal
         cv2.destroyAllWindows()  # Destroi a tela da camera
 
 
-# Funcoes da Main!
-async def init_hands():  # Função par tornar a iniciação sincrona
-    loop = asyncio.get_running_loop()  # Aguarda terminar a funçõao
-    with ThreadPoolExecutor() as executor:
-        return await loop.run_in_executor(executor, hands.Hands)
-
-
-async def init_control():  # Função par tornar a iniciação sincrona
-    loop = asyncio.get_running_loop()  # Aguarda terminar a funçõao
-    with ThreadPoolExecutor() as executor:
-        return await loop.run_in_executor(executor, control.Control)
-
-
-def Check_Gesture(
-    func_exe, func_act, side, hand_label, cooldown, controls_recording, control_functions
-):
+def check_gesture(func_exe, func_act, side, hand_label, cooldown, controls_recording, state):
     global gesture_cooldown
     if not (func_act() and hand_label == side):
         return
     gesture_cooldown = cooldown
     if controls_recording:
         # Gestos de video alternam a gravacao; so submete o worker ao INICIAR
-        if control_functions.toggle_recording():
+        if state.toggle_recording():
             func_exe()
     else:
         func_exe()
 
-
-# def calculusNormalDistance(X, Y, hand_landmarks):
-#   w = 7.87 # 20cm -> 8pl
-#   f = 300.154 # Disfoco da camera
-#   indicador_5_x = int(hand_landmarks.landmark[5].x * X)
-#   mindinho_17_x = int(hand_landmarks.landmark[17].x * X)
-#   indicador_5_y = int(hand_landmarks.landmark[5].y * Y)
-#   mindinho_17_y = int(hand_landmarks.landmark[17].y * Y)
-#   px = mindinho_17_x - indicador_5_x # Largura relativa
-#   py = mindinho_17_y - indicador_5_y # Largura relativa
-#   if px != 0 and py != 0:
-#     Dx = math.sqrt(((w*f)/(px*2))**2)
-#     Dy = math.sqrt(((w*f)/(py+1))**2)
-#   else:
-#     Dx = 150
-#     Dy = 150
-#   return [Dx*2.54, Dy*2.54]
 
 # Entry point: o disparo de `asyncio.run(main())` vive em jarvis/__main__.py
 # (`python -m jarvis`) e no shim main.py da raiz (`python main.py`).

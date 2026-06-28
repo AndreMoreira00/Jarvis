@@ -245,11 +245,11 @@ GESTURE_NONE = {
 }
 
 ALL_GESTURES = {
-    "Map_Ok": GESTURE_OK,
-    "Map_Positive": GESTURE_POSITIVE,
-    "Map_Speak": GESTURE_SPEAK,
-    "Map_Squid": GESTURE_SQUID,
-    "Map_Rock": GESTURE_ROCK,
+    "map_ok": GESTURE_OK,
+    "map_positive": GESTURE_POSITIVE,
+    "map_speak": GESTURE_SPEAK,
+    "map_squid": GESTURE_SQUID,
+    "map_rock": GESTURE_ROCK,
 }
 
 

@@ -6,12 +6,15 @@ from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 
+from jarvis.config import Config
+
 
 class Manager:
-    def __init__(self):
-        self.CLIENT_SECRET = "./env/client_secret.json"
-        self.CREDENTIALS_FILE = "./env/token.json"
-        self.SCOPES = ["https://www.googleapis.com/auth/photoslibrary"]
+    def __init__(self, config: Config):
+        self.config = config
+        self.CLIENT_SECRET = config.photos_client_secret
+        self.CREDENTIALS_FILE = config.photos_token_file
+        self.SCOPES = list(config.photos_scopes)
 
     def authorize_credentials(self):
         creds = None
@@ -31,14 +34,14 @@ class Manager:
 
         return creds.token
 
-    def getPhotoUrl(self, access_token, photo_id):
+    def get_photo_url(self, access_token, photo_id):
         headers = {"Authorization": f"Bearer {access_token}", "Content-type": "application/json"}
         url = f"https://photoslibrary.googleapis.com/v1/mediaItems/{photo_id}"
         response = requests.get(url, headers=headers)
         response_json = response.json()
         return response_json["baseUrl"]
 
-    def uploadMidia(self, image_path):
+    def upload_media(self, image_path):
         access_token = self.authorize_credentials()
         mime_type = mimetypes.guess_type(image_path)[0] or "application/octet-stream"
         headers = {
@@ -73,7 +76,7 @@ class Manager:
             }
 
             # Cria o item de midia na biblioteca. A consulta da URL final
-            # (getPhotoUrl) ainda nao e usada; sera ligada quando a feature de
+            # (get_photo_url) ainda nao e usada; sera ligada quando a feature de
             # retorno de URL for concluida.
             requests.post(
                 "https://photoslibrary.googleapis.com/v1/mediaItems:batchCreate",

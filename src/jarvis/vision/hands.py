@@ -18,20 +18,20 @@ class Hands:
     # Mantem a assinatura legada (h, w, hand_landmarks, frame) e o contrato
     # True/None do call-site atual (frame e ignorado). O None some quando o
     # wrapper for removido na reestruturacao (Onda 6).
-    def Calculate_Distance(self, point1, point2):
+    def calculate_distance(self, point1, point2):
         return gestures.distance(point1, point2)
 
-    def Map_Ok(self, h, w, hand_landmarks, frame):
+    def map_ok(self, h, w, hand_landmarks, frame):
         return True if gestures.is_ok(h, w, hand_landmarks) else None
 
-    def Map_Positive(self, h, w, hand_landmarks, frame):
+    def map_positive(self, h, w, hand_landmarks, frame):
         return True if gestures.is_positive(h, w, hand_landmarks) else None
 
-    def Map_Speak(self, h, w, hand_landmarks, frame):
+    def map_speak(self, h, w, hand_landmarks, frame):
         return True if gestures.is_speak(h, w, hand_landmarks) else None
 
-    def Map_Squid(self, h, w, hand_landmarks, frame):
+    def map_squid(self, h, w, hand_landmarks, frame):
         return True if gestures.is_squid(h, w, hand_landmarks) else None
 
-    def Map_Rock(self, h, w, hand_landmarks, frame):
+    def map_rock(self, h, w, hand_landmarks, frame):
         return True if gestures.is_rock(h, w, hand_landmarks) else None

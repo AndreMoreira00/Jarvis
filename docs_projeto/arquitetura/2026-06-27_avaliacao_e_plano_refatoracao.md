@@ -523,15 +523,82 @@ thin-client + cerebro no celular com VLM on-device). Se o produto pivotar, a est
 `vision/core/services` voltada ao RPi3 pode ser parcialmente descartada. O usuario optou
 por seguir a Onda 5 mesmo assim; **fica o registro** para reavaliar antes da Onda 6.
 
+### Onda 6 — concluida (2026-06-27)
+
+**Reframe pelo pivo (lido o doc tres pilares ANTES de executar):** o app Python deixou
+de ser o produto e virou **referencia/spec do port Kotlin** (`hands.py` -> HandLandmarker
+1:1; `control.py` -> "state machine quebrada por responsabilidade"; persona -> system
+prompt; `manager.py` -> descartado; Pi3 -> bancada). Logo a Onda 6 foi reescopada:
+
+| Pedaco da Onda 6 original | Decisao | Por que |
+|---|---|---|
+| Dissolver o `Control` god-class | **FEITO** | O doc nomeia explicitamente como spec da state machine Kotlin — valor duravel |
+| `config.py` + composition root (`app.py`) | **FEITO** | Estrutura limpa para a referencia (escolha do usuario: "Onda 6 completa") |
+| Resolver fronteira async/sync | **FEITO** | `AsyncBridge` (loop por thread) isola o conceito |
+| Rename snake_case + ruff `N` | **FEITO** | Doc diz port "1:1"; nomes idiomaticos deixam a referencia limpa |
+| **Parte 5 — resiliencia** (systemd watchdog, circuit breaker, supervisao) | **CORTADA** | Infra de produto para o daemon do Pi3, que virou bancada. Zero transferencia p/ Android/ESP32 |
+
+**6A — config centralizada:** novo [config.py](../../src/jarvis/config.py) com `Config`
+(frozen dataclass) + `PERSONA_PROMPT`. `Config.from_env()` le `.env`. Injetado em
+`Jarvis(mixer, config)`, `Manager(config)` e usado pelos paths/sons. Removidos
+`load_dotenv`/`os.getenv` de dentro do `Jarvis`.
+
+**6B — dissolucao do `Control` god-class** (camada core, por responsabilidade):
+
+| Novo modulo | Papel |
+|---|---|
+| [core/state.py](../../src/jarvis/core/state.py) `RuntimeState` | trava `busy` + gravacao (`threading.Event`) — estado unico compartilhado |
+| [core/async_bridge.py](../../src/jarvis/core/async_bridge.py) `AsyncBridge` | roda corrotinas de worker threads (loop reutilizavel por thread) |
+| [core/capture.py](../../src/jarvis/core/capture.py) `Capture` | I/O de foto/video/audio + sons de confirmacao |
+| [core/flows.py](../../src/jarvis/core/flows.py) `Flows` | a state machine: `audio_to_audio`/`image_audio`/`video_audio` |
+| [app.py](../../src/jarvis/app.py) `build()` | **composition root**: monta e injeta o grafo (substitui o construtor god-class) |
+
+O `loop.py` passou a consumir `app.build()` (montado em executor) em vez de
+`init_hands`/`init_control`. `Recycle_midia` (codigo morto/bugado, alvo do antigo xfail)
+foi **removido**. Testes: `test_control.py` virou `test_state`/`test_async_bridge`/
+`test_capture`/`test_flows`/`test_app`; `test_main` exercita `loop.check_gesture`.
+
+**6C — snake_case + ruff N:** rename dos sobreviventes (`Map_*`->`map_*`,
+`Calculate_Distance`->`calculate_distance`, `Text_To_Text`/`Image_To_Text`/
+`Video_To_Text`->snake, `Translate`->`translate`, `Delete_Cahche_Files`->
+`delete_cache_files` [typo corrigido], `getPhotoUrl`->`get_photo_url`,
+`uploadMidia`->`upload_media`, `Config_Project`->`config_project`, local `SOUND`->`sound`).
+Ativada a regra `N` do ruff (naming). Atributos UPPER de config (`API_KEY`, `SCOPES`...)
+sao tratados como constantes e nao violam `N`.
+
+**Spec do port (Python -> Kotlin), para a Fase 1:**
+
+| Modulo Python | Componente Kotlin (Fase 1) |
+|---|---|
+| `vision/gestures.py` + `vision/hands.py` | MediaPipe HandLandmarker (port 1:1) |
+| `core/flows.py` (`Flows`) | state machine em corrotinas |
+| `core/capture.py` / `core/state.py` | captura CameraX + estado de UI |
+| `config.py` `PERSONA_PROMPT` | system prompt do modelo on-device (Gemma 3n) |
+| `services/jarvis.py` | inferencia LiteRT-LM + TTS Piper (atras de interface) |
+| `services/manager.py` | **descartado** (contraria privacidade) |
+
+**Verificacao:** `ruff check` (com `N`) limpo, `ruff format` ok, `uvx mypy` **Success
+(18 arquivos)**, suite verde, cobertura **92%** (so o loop de I/O de `main()` fora). Sem
+`git commit`.
+
+**Roadmap pos-Onda 6:** com a Parte 5 cortada e o codigo ja servindo de spec limpa, a
+**Onda 7 perde a maior parte do sentido** no alvo Python (era finalizacao + resiliencia
+do daemon RPi3). O proximo passo natural e a **Fase 1 do doc tres pilares** (port Android),
+nao uma Onda 7. A decidir com o usuario.
+
 ## Referencias
 
-- Codigo avaliado (pos-Onda 5): [loop.py](../../src/jarvis/core/loop.py),
-  [control.py](../../src/jarvis/core/control.py),
+- Codigo avaliado (pos-Onda 6): [app.py](../../src/jarvis/app.py),
+  [config.py](../../src/jarvis/config.py), [loop.py](../../src/jarvis/core/loop.py),
+  [flows.py](../../src/jarvis/core/flows.py), [capture.py](../../src/jarvis/core/capture.py),
+  [state.py](../../src/jarvis/core/state.py),
+  [async_bridge.py](../../src/jarvis/core/async_bridge.py),
   [jarvis.py](../../src/jarvis/services/jarvis.py),
   [hands.py](../../src/jarvis/vision/hands.py),
   [gestures.py](../../src/jarvis/vision/gestures.py),
   [manager.py](../../src/jarvis/services/manager.py),
   [bootstrap.py](../../scripts/bootstrap.py)
+- Piv_o de produto: [[../decisoes/2026-06-27_arquitetura_tres_pilares|arquitetura tres pilares]]
 - [[../CONVENCOES|Convencoes da documentacao]]
 - Arquitetura Hexagonal (Ports & Adapters), Alistair Cockburn — *a ingerir em
   `referencias/` se virar base de decisao formal*

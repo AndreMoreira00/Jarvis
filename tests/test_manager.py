@@ -16,6 +16,7 @@ from unittest.mock import MagicMock, mock_open, patch
 
 import pytest
 
+from jarvis.config import Config
 from jarvis.services import manager
 
 # ---------------------------------------------------------------------------
@@ -26,7 +27,7 @@ from jarvis.services import manager
 @pytest.fixture
 def mgr():
     """Instancia limpa de ``Manager`` para cada teste."""
-    return manager.Manager()
+    return manager.Manager(Config())
 
 
 @pytest.fixture
@@ -168,7 +169,7 @@ class TestAuthorizeCredentials:
 
 
 # ---------------------------------------------------------------------------
-# 3. getPhotoUrl — GET no mediaItem e extracao do baseUrl
+# 3. get_photo_url — GET no mediaItem e extracao do baseUrl
 # ---------------------------------------------------------------------------
 
 
@@ -181,7 +182,7 @@ class TestGetPhotoUrl:
         response.json.return_value = {"baseUrl": "https://lh3.googleusercontent.com/abc"}
         fake_requests.get.return_value = response
 
-        url = mgr.getPhotoUrl("fake-token", "PHOTO123")
+        url = mgr.get_photo_url("fake-token", "PHOTO123")
 
         assert url == "https://lh3.googleusercontent.com/abc"
         fake_requests.get.assert_called_once_with(
@@ -198,14 +199,14 @@ class TestGetPhotoUrl:
         response.json.return_value = {"baseUrl": "https://x/y"}
         fake_requests.get.return_value = response
 
-        mgr.getPhotoUrl("tok", "OUTRO-ID")
+        mgr.get_photo_url("tok", "OUTRO-ID")
 
         chamada_url = fake_requests.get.call_args.args[0]
         assert chamada_url.endswith("/mediaItems/OUTRO-ID")
 
 
 # ---------------------------------------------------------------------------
-# 4. uploadMidia — upload raw + batchCreate + resolucao da URL
+# 4. upload_media — upload raw + batchCreate + resolucao da URL
 # ---------------------------------------------------------------------------
 
 
@@ -216,26 +217,26 @@ class TestUploadMidia:
         """Sequencia: POST upload (200) -> POST batchCreate.
 
         Verifica headers/payload de cada etapa e a ordem das chamadas requests.post.
-        A resolucao da URL (getPhotoUrl) foi REMOVIDA como codigo morto na Onda 3
+        A resolucao da URL (get_photo_url) foi REMOVIDA como codigo morto na Onda 3
         (o resultado era descartado); aqui garantimos que ela nao e mais chamada.
         """
         # authorize_credentials e testado a parte; aqui so devolve um token fixo.
         monkeypatch.setattr(mgr, "authorize_credentials", lambda: "fake-token")
-        # getPhotoUrl nao deve mais ser chamado pelo uploadMidia.
+        # get_photo_url nao deve mais ser chamado pelo upload_media.
         get_url = MagicMock(return_value="https://lh3/final")
-        monkeypatch.setattr(mgr, "getPhotoUrl", get_url)
+        monkeypatch.setattr(mgr, "get_photo_url", get_url)
 
         # 1a resposta: upload raw -> 200 + upload_token no body.
         upload_resp = MagicMock(name="upload_resp")
         upload_resp.status_code = 200
         upload_resp.text = "UPLOAD-TOKEN-XYZ"
-        # 2a resposta: batchCreate (corpo nao e mais lido pelo uploadMidia).
+        # 2a resposta: batchCreate (corpo nao e mais lido pelo upload_media).
         batch_resp = MagicMock(name="batch_resp")
         fake_requests.post.side_effect = [upload_resp, batch_resp]
 
         m = mock_open(read_data=b"bytes-da-imagem")
         with patch("builtins.open", m):
-            mgr.uploadMidia("/midia/foto.jpg")
+            mgr.upload_media("/midia/foto.jpg")
 
         # Abriu o arquivo em binario para ler os bytes.
         m.assert_called_once_with("/midia/foto.jpg", "rb")
@@ -271,13 +272,13 @@ class TestUploadMidia:
             ]
         }
 
-        # A resolucao de URL foi removida (codigo morto): getPhotoUrl nao e chamado.
+        # A resolucao de URL foi removida (codigo morto): get_photo_url nao e chamado.
         get_url.assert_not_called()
 
     def test_filename_usa_basename_do_caminho(self, mgr, fake_requests, monkeypatch):
         """fileName no payload deve ser apenas o basename, sem o diretorio."""
         monkeypatch.setattr(mgr, "authorize_credentials", lambda: "tok")
-        monkeypatch.setattr(mgr, "getPhotoUrl", MagicMock(return_value="u"))
+        monkeypatch.setattr(mgr, "get_photo_url", MagicMock(return_value="u"))
 
         upload_resp = MagicMock(status_code=200, text="UT")
         batch_resp = MagicMock()
@@ -287,7 +288,7 @@ class TestUploadMidia:
         m = mock_open(read_data=b"x")
         # Caminho aninhado: so o nome do arquivo deve sobrar.
         with patch("builtins.open", m):
-            mgr.uploadMidia("/var/data/midia/sub/imagem_final.jpg")
+            mgr.upload_media("/var/data/midia/sub/imagem_final.jpg")
 
         payload = fake_requests.post.call_args_list[1].kwargs["json"]
         nome = payload["newMediaItems"][0]["simpleMediaItem"]["fileName"]
@@ -298,8 +299,8 @@ class TestUploadMidia:
     ):
         """Upload != 200: chama raise_for_status e NAO faz batchCreate nem resolve URL."""
         monkeypatch.setattr(mgr, "authorize_credentials", lambda: "fake-token")
-        get_url = MagicMock(name="getPhotoUrl")
-        monkeypatch.setattr(mgr, "getPhotoUrl", get_url)
+        get_url = MagicMock(name="get_photo_url")
+        monkeypatch.setattr(mgr, "get_photo_url", get_url)
 
         upload_resp = MagicMock(name="upload_resp")
         upload_resp.status_code = 403
@@ -309,7 +310,7 @@ class TestUploadMidia:
         m = mock_open(read_data=b"bytes")
         with patch("builtins.open", m):
             with pytest.raises(RuntimeError, match="HTTP 403"):
-                mgr.uploadMidia("/midia/foto.jpg")
+                mgr.upload_media("/midia/foto.jpg")
 
         # So o POST de upload aconteceu; batchCreate nunca foi chamado.
         assert fake_requests.post.call_count == 1

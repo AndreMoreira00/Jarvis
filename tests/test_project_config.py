@@ -1,6 +1,6 @@
 """Testes do bootstrap de pastas/.env do bootstrap.
 
-Cobre o refactor que tornou ``Config_Project`` idempotente e protegeu os efeitos
+Cobre o refactor que tornou ``config_project`` idempotente e protegeu os efeitos
 colaterais atras de um guard ``__main__``:
 
 - ``os.makedirs(..., exist_ok=True)`` no lugar de ``os.mkdir`` (antes estourava
@@ -10,7 +10,7 @@ colaterais atras de um guard ``__main__``:
 - a criacao das pastas so acontece dentro de ``if __name__ == "__main__"``,
   entao um simples ``import bootstrap`` nao deve mexer no filesystem.
 
-Como ``Config_Project`` usa caminhos relativos, cada teste roda isolado num
+Como ``config_project`` usa caminhos relativos, cada teste roda isolado num
 ``tmp_path`` via ``monkeypatch.chdir`` para nao sujar o repo.
 """
 
@@ -25,7 +25,7 @@ import pytest
 def in_tmp_cwd(tmp_path, monkeypatch):
     """Roda o teste com o cwd apontando para um ``tmp_path`` limpo.
 
-    Garante isolamento: os caminhos relativos de ``Config_Project`` ('response',
+    Garante isolamento: os caminhos relativos de ``config_project`` ('response',
     'midia', '.env') sao resolvidos dentro do diretorio temporario.
     """
     monkeypatch.chdir(tmp_path)
@@ -33,8 +33,8 @@ def in_tmp_cwd(tmp_path, monkeypatch):
 
 
 def test_config_project_cria_pastas_e_env(in_tmp_cwd):
-    """Config_Project deve criar 'response', 'midia' e o arquivo '.env'."""
-    bootstrap.Config_Project()
+    """config_project deve criar 'response', 'midia' e o arquivo '.env'."""
+    bootstrap.config_project()
 
     response_dir = in_tmp_cwd / "response"
     midia_dir = in_tmp_cwd / "midia"
@@ -46,15 +46,15 @@ def test_config_project_cria_pastas_e_env(in_tmp_cwd):
 
 
 def test_config_project_e_idempotente(in_tmp_cwd):
-    """Chamar Config_Project duas vezes nao deve levantar excecao.
+    """Chamar config_project duas vezes nao deve levantar excecao.
 
     Ponto-chave do refactor: ``os.makedirs(exist_ok=True)`` e ``open('.env','a')``
     toleram que pastas/arquivo ja existam (antes ``os.mkdir`` estourava
     ``FileExistsError`` na segunda chamada).
     """
-    bootstrap.Config_Project()
+    bootstrap.config_project()
     # Segunda chamada nao pode explodir; se explodir, o teste falha por excecao.
-    bootstrap.Config_Project()
+    bootstrap.config_project()
 
     assert (in_tmp_cwd / "response").is_dir()
     assert (in_tmp_cwd / "midia").is_dir()
@@ -62,7 +62,7 @@ def test_config_project_e_idempotente(in_tmp_cwd):
 
 
 def test_config_project_idempotente_com_pastas_preexistentes(in_tmp_cwd):
-    """Com as pastas ja criadas a mao, Config_Project deve apenas seguir em frente.
+    """Com as pastas ja criadas a mao, config_project deve apenas seguir em frente.
 
     Cobre o caminho em que o diretorio existe antes da chamada (estado parcial,
     como apos um bootstrap anterior interrompido).
@@ -71,7 +71,7 @@ def test_config_project_idempotente_com_pastas_preexistentes(in_tmp_cwd):
     (in_tmp_cwd / "midia").mkdir()
 
     # Nao pode levantar FileExistsError.
-    bootstrap.Config_Project()
+    bootstrap.config_project()
 
     assert (in_tmp_cwd / "response").is_dir()
     assert (in_tmp_cwd / "midia").is_dir()
@@ -88,7 +88,7 @@ def test_env_em_modo_append_preserva_conteudo_existente(in_tmp_cwd):
     conteudo = "API_GEMINI=chave_secreta\n"
     env_file.write_text(conteudo, encoding="utf-8")
 
-    bootstrap.Config_Project()
+    bootstrap.config_project()
 
     assert env_file.read_text(encoding="utf-8") == conteudo
 
