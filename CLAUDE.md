@@ -4,7 +4,31 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 > Idioma: este repo e escrito em portugues (codigo, comentarios, docs e persona). Mantenha esse padrao.
 
+## Escopo dos repositorios (LEIA PRIMEIRO)
+
+O produto Jarvis foi dividido em **dois repositorios**. **Este repo e o lado FIRMWARE + spec.**
+
+| Repo | Papel | O que vive aqui |
+|---|---|---|
+| **Jarvis** (este) | **Firmware** dos oculos (cliente fino) + **MVP Python legado como spec** | Projeto ESP-IDF em [Jarvis-ESP-Frimeware/](Jarvis-ESP-Frimeware/) (C/C++, branch `Jarvis-ESP-Frimware`); o pacote Python `src/jarvis` (vira spec/referencia para portar); testes; toda a doc de arquitetura macro (3 pilares), hardware, energia, audio |
+| **Jarvis-APP** (`../Jarvis-APP`) | **App Android** (o cerebro) | App Kotlin, IA on-device, e a **fonte da verdade do contrato de comunicacao** oculos<->app |
+
+**Divisao de responsabilidades:**
+- **Fica AQUI**: firmware ESP32-S3 (ESP-IDF), camera DVP -> MJPEG por WiFi, audio I2S (mic +
+  conducao ossea), wake word, IMU, energia, e a decisao de arquitetura macro. O MVP Python `src/jarvis`
+  permanece como **spec executavel** do comportamento a ser portado (gestos, fluxos, persona).
+- **Vai para o APP** (`Jarvis-APP`): toda a logica do cerebro — percepcao de gestos (MediaPipe),
+  IA on-device (VLM/LLM offline), STT/TTS, orquestracao e UI.
+- **Contrato oculos<->app**: a spec canonica do protocolo (BLE GATT + WiFi/MJPEG + audio Opus) e
+  **dona do repo Jarvis-APP** (`docs_projeto/Jarvis_App/05_Software_Auxiliar/App_Mobile/Contrato_Comunicacao_Oculos.md`).
+  O firmware **implementa e referencia** — nao redefine. Ver [docs_projeto/decisoes/2026-06-28_separacao_repos_firmware_app.md](docs_projeto/decisoes/2026-06-28_separacao_repos_firmware_app.md).
+
+Decisao de arquitetura macro: [docs_projeto/decisoes/2026-06-27_arquitetura_tres_pilares.md](docs_projeto/decisoes/2026-06-27_arquitetura_tres_pilares.md).
+
 ## Visao geral
+
+> Nota: a "Visao geral" abaixo descreve o **MVP Python legado** (alvo original Raspberry Pi),
+> mantido como spec. O rumo atual e oculos cliente-fino **ESP32-S3** + celular cerebro (ver escopo acima).
 
 **Jarvis** e o software para um par de oculos inteligentes (alvo: Raspberry Pi 3) que
 funciona por **controle por gestos**. O fluxo, por frame da camera, e:
