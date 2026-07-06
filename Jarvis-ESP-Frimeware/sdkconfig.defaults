@@ -1,0 +1,40 @@
+# sdkconfig.defaults — base versionada do firmware Jarvis (ESP32-S3 N16R8).
+# Aplicado por `idf.py` em cima do default do target. Rode antes:
+#   idf.py set-target esp32s3
+# Ajuste fino (PSRAM/flash) deve ser confirmado em hardware via `idf.py menuconfig`.
+
+# ===== Target =====
+CONFIG_IDF_TARGET="esp32s3"
+
+# ===== Flash 16MB (N16) =====
+# Modo/freq de flash ficam no default seguro do IDF p/ S3 (evita o conflito de
+# clock flash-quad x PSRAM-octal apontado na verificacao adversarial; ver plano).
+CONFIG_ESPTOOLPY_FLASHSIZE_16MB=y
+
+# ===== PSRAM octal 8MB (R8) =====
+# MODE_OCT e obrigatorio no R8 — em QUAD o bootloader nao enxerga os 8MB.
+CONFIG_SPIRAM=y
+CONFIG_SPIRAM_MODE_OCT=y
+CONFIG_SPIRAM_SPEED_80M=y
+# USE_MALLOC e o simbolo que DE FATO disponibiliza a PSRAM no heap (frame buffers da camera).
+CONFIG_SPIRAM_USE_MALLOC=y
+
+# ===== CPU =====
+CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_240=y
+
+# ===== Particoes OTA custom (16MB) =====
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
+
+# ===== Bluetooth: NimBLE como host (NUNCA habilitar Bluedroid junto) =====
+CONFIG_BT_ENABLED=y
+CONFIG_BT_NIMBLE_ENABLED=y
+CONFIG_BT_NIMBLE_ROLE_PERIPHERAL=y
+CONFIG_BT_NIMBLE_ROLE_BROADCASTER=y
+CONFIG_BT_NIMBLE_MAX_CONNECTIONS=1
+
+# ===== Log =====
+CONFIG_LOG_DEFAULT_LEVEL_INFO=y
+
+# ===== FreeRTOS =====
+CONFIG_FREERTOS_HZ=1000

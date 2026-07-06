@@ -1,0 +1,10 @@
+# Dependencias gerenciadas (ESP Component Registry).
+# Os componentes pesados sao adicionados quando os subsistemas correspondentes
+# saem do stub (mantem o 1o build — so plano de controle BLE — leve e rapido):
+#   - espressif/esp32-camera : ao implementar components/camera  (OV2640 DVP -> JPEG)
+#   - espressif/esp-sr       : ao implementar components/wake_word (WakeNet9s local)
+dependencies:
+  idf:
+    version: ">=5.5"
+  # espressif/esp32-camera: "^2.1.7"   # descomentar ao implementar a camera
+  # espressif/esp-sr: "^2.4.6"         # descomentar ao implementar o wake word

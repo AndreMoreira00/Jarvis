@@ -25,6 +25,11 @@ O produto Jarvis foi dividido em **dois repositorios**. **Este repo e o lado FIR
 
 Decisao de arquitetura macro: [docs_projeto/decisoes/2026-06-27_arquitetura_tres_pilares.md](docs_projeto/decisoes/2026-06-27_arquitetura_tres_pilares.md).
 
+Plano de implementacao do firmware (mapa firmware↔app, componentes ESP-IDF, tasks, energia, roadmap;
+**BLE GATT como 1º subsistema real, ja compila**): [docs_projeto/decisoes/2026-06-29_plano_firmware_esp32s3.md](docs_projeto/decisoes/2026-06-29_plano_firmware_esp32s3.md)
++ proposta de contrato BLE em [docs_projeto/decisoes/2026-06-29_contrato_ble_gatt_proposta.md](docs_projeto/decisoes/2026-06-29_contrato_ble_gatt_proposta.md).
+O esqueleto (1 componente ESP-IDF por subsistema) vive em [Jarvis-ESP-Frimeware/](Jarvis-ESP-Frimeware/) (ver o README de la).
+
 ## Visao geral
 
 > Nota: a "Visao geral" abaixo descreve o **MVP Python legado** (alvo original Raspberry Pi),
